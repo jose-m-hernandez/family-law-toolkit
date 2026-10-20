@@ -12,3 +12,4 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The AGPL-3.0 licence text.
 - Contributing and security policies, code owners and a pull request template.
 - The first two decision records: the CLAUDE.md bridge and this changelog's format.
+- A guideline child-support calculator, step 1: the Family Code section 4055 formula on user-entered net disposable income, with hand-derived test cases and a text report.
