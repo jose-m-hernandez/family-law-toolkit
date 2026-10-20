@@ -22,3 +22,4 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - SECURITY.md now promises a best-effort reply to a private report, not a guaranteed one.
 - CONTRIBUTING.md now says every change is reviewed independently before it lands.
+- The support report names the state minimum wage (Lab. Code 1182.12), states what the low-income presumption is, and notes that the per-child allocation is not shown when there are two or more children.
