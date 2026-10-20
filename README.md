@@ -14,3 +14,13 @@ nothing here is ready to use yet.
 
 GNU Affero General Public License v3.0 or later; see [LICENSE](LICENSE).
 A commercial licence is also available from the copyright holder.
+
+## Development
+
+Run the tests:
+
+    python3 -m unittest discover -s tests -t . -v
+
+The tests use invented data.
+
+CI also runs a private-string scan on every push and pull request; contributors do not run it, CI does. How it works and how to try it: [docs/barred-strings-scan.md](docs/barred-strings-scan.md).

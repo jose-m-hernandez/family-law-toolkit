@@ -11,4 +11,12 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - README, AGENTS.md (the instructions your AI agent reads) and this changelog.
 - The AGPL-3.0 licence text.
 - Contributing and security policies, code owners and a pull request template.
-- The first two decision records: the CLAUDE.md bridge and this changelog's format.
+- Two decision records: how the AI-agent instructions file is arranged, and this changelog's format.
+- A CI scan that fails a push or pull request if any entry from a private list appears in its history or branch name. It never prints the match. See docs/decisions/2026-10-19-every-push-and-pull-request-runs-the-barred-strings-scan.md. An entry still matches when its words are separated by a line break or repeated spaces, or when an invisible character is inserted into it; author and committer emails are checked.
+- The scan can match a short entry as a whole word only, through an optional per-entry flag.
+- docs/barred-strings-scan.md: how the scan works and how to try it.
+
+### Changed
+
+- SECURITY.md now promises a best-effort reply to a private report, not a guaranteed one.
+- CONTRIBUTING.md now says every change is reviewed independently before it lands.
