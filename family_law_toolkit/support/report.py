@@ -24,6 +24,7 @@ NOTE_TIME_SHARE = (
     "You enter the share of time yourself. "
     "The default-proceeding rule (FC 4055(b)(6)) is not applied."
 )
+NOTE_PER_CHILD = "The per-child allocation (FC 4055(b)(8)) is not shown."
 
 LOW_INCOME_HEADING = "Low-income adjustment (FC 4055(b)(7); range under FC 4055(c))"
 READING_R2_LINE = (
@@ -66,7 +67,8 @@ def _low_income_lines(result):
     if lia.applies:
         lines += [
             "  The paying parent's net disposable income is less than the threshold: "
-            "a rebuttable presumption applies (FC 4055(b)(7)).",
+            "a rebuttable presumption that the paying parent is entitled to a "
+            "low-income adjustment applies (FC 4055(b)(7)).",
             "  Permitted reduction (FC 4055(b)(7), (c)): 0.00 to %s"
             % money(lia.max_reduction),
             "  Support range (FC 4055(c)): %s to %s"
@@ -99,7 +101,7 @@ def render_report(result):
         "  Parent B net disposable income: %s" % money(result.b_ndi),
         "  Parent A's share of time: %s%%" % plain(result.a_time_percent, 2),
         "  Number of children: %d" % result.children,
-        "  Hourly minimum wage used: %s" % money(result.minimum_wage_hourly),
+        "  Hourly state minimum wage used (Lab. Code 1182.12): %s" % money(result.minimum_wage_hourly),
         "",
         "Formula",
         "  Total net disposable income, TN (FC 4055(b)(1)(E)): %s" % money(result.tn),
@@ -119,4 +121,6 @@ def render_report(result):
     ]
     body += _low_income_lines(result)
     body += ["", NOTE_NDI, NOTE_TIME_SHARE]
+    if result.children >= 2:
+        body.append(NOTE_PER_CHILD)
     return "\f".join(paginate(body))
