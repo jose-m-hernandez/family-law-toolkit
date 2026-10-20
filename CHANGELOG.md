@@ -17,6 +17,7 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - docs/barred-strings-scan.md: how the scan works and how to try it.
 - A guideline child-support calculator, step 1: the Family Code section 4055 formula on user-entered net disposable income, with hand-derived test cases and a text report.
 - A CI check that fails a pull request unless CHANGELOG.md gains at least one new entry under "## [Unreleased]" (or the change is a release that moves those entries into a dated section). It prints counts only. Removing one entry and adding another counts as no change, so keep the old line or add a second.
+- Tests that pin six more behaviours of the CHANGELOG check: trailing spaces after a heading, tab and nested bullets, repeated entries in a release, and exit 2 on an unexpected internal error.
 
 ### Changed
 

@@ -358,6 +358,45 @@ class ChangelogTouchTest(unittest.TestCase):
         self.assertEqual(buf.getvalue(), "changelog-touch: cannot resolve base; failing closed\n")
         fake_git.assert_not_called()
 
+    def test_unreleased_heading_with_trailing_spaces_is_found(self):
+        text = BASE_TEXT.replace("## [Unreleased]\n", "## [Unreleased]   \n")
+        self.start(text)
+        self.change(text.replace("- beta widget entry\n", "- beta widget entry\n- delta new entry\n"))
+        self.check(0, ok_line(1))
+
+    def test_release_heading_with_trailing_spaces_counts(self):
+        self.start()
+        self.change(self.RELEASED.replace("## [0.2.0] - 2026-10-20\n", "## [0.2.0] - 2026-10-20   \n"))
+        self.check(0, "changelog-touch: ok: release 0.2.0 carries 2 entries")
+
+    def test_dash_tab_line_is_not_an_entry(self):
+        self.start()
+        self.change(BASE_TEXT.replace("- beta widget entry\n", "- beta widget entry\n-\tdelta tab line\n"))
+        self.check(1, FAIL_LINE)
+
+    def test_nested_bullet_is_not_an_entry(self):
+        self.start()
+        self.change(BASE_TEXT.replace("- beta widget entry\n", "- beta widget entry\n  - delta nested line\n"))
+        self.check(1, FAIL_LINE)
+
+    def test_release_must_carry_repeated_entries_as_many_times(self):
+        self.start(BASE_TEXT.replace("- alpha widget entry\n", "- alpha widget entry\n- alpha widget entry\n"))
+        self.change(self.RELEASED)
+        self.check(1, "changelog-touch: release 0.2.0 does not carry the Unreleased entries exactly")
+
+    def test_unexpected_error_fails_closed_with_one_line(self):
+        from ci import changelog_touch
+        import contextlib
+        import io
+
+        buf = io.StringIO()
+        with mock.patch.object(
+            changelog_touch, "run", side_effect=RuntimeError("boom")
+        ), contextlib.redirect_stdout(buf):
+            rc = changelog_touch.main(["--base", "main"])
+        self.assertEqual(rc, 2)
+        self.assertEqual(buf.getvalue(), "changelog-touch: internal error (RuntimeError); failing closed\n")
+
     # -- privacy ----------------------------------------------------------
 
     def test_output_never_contains_entry_text(self):
