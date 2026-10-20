@@ -76,6 +76,7 @@ class Case(unittest.TestCase):
         proc = subprocess.run(
             ["git", "-C", cwd] + list(args),
             env=env,
+            stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
