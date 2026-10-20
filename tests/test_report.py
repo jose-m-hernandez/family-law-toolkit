@@ -175,7 +175,11 @@ class ReportTests(unittest.TestCase):
                         self.assertIn("0.00 to ", line)
                     if low in line:
                         self.assertIn("%s to %s" % (low, support), line)
-                self.assertIn("a rebuttable presumption applies (FC 4055(b)(7))", text)
+                self.assertIn(
+                    "a rebuttable presumption that the paying parent is entitled to a "
+                    "low-income adjustment applies (FC 4055(b)(7))",
+                    text,
+                )
                 lowered = text.lower()
                 self.assertNotIn("adjusted support", lowered)
                 self.assertNotIn("after adjustment", lowered)
@@ -295,7 +299,9 @@ class ReportTests(unittest.TestCase):
                     "  Number of children: %d" % inputs["children"], section
                 )
                 self.assertIn(
-                    "  Hourly minimum wage used: " + inputs["minimum_wage_hourly"], section
+                    "  Hourly state minimum wage used (Lab. Code 1182.12): "
+                    + inputs["minimum_wage_hourly"],
+                    section,
                 )
 
     def test_adjustment_shows_range_and_no_single_figure(self):
@@ -372,6 +378,55 @@ class ReportTests(unittest.TestCase):
         zero = render_report(compute("0", "0", "0", 1, "21.00"))
         self.assertIn("no paying parent", zero)
         self.assertIn(money(compute("0", "0", "0", 1, "21.00").support), zero)
+
+
+    def test_wage_line_names_state_minimum_wage(self):
+        for case in load_cases():
+            with self.subTest(case=case["id"]):
+                lines = report_for(case).split("\n")
+                self.assertIn(
+                    "  Hourly state minimum wage used (Lab. Code 1182.12): "
+                    + case["inputs"]["minimum_wage_hourly"],
+                    lines,
+                )
+                self.assertFalse(
+                    any(l.startswith("  Hourly minimum wage used") for l in lines)
+                )
+
+    def test_presumption_sentence_when_adjustment_applies(self):
+        sentence = (
+            "  The paying parent's net disposable income is less than the threshold: "
+            "a rebuttable presumption that the paying parent is entitled to a "
+            "low-income adjustment applies (FC 4055(b)(7))."
+        )
+        for case in load_cases():
+            with self.subTest(case=case["id"]):
+                lines = report_for(case).split("\n")
+                if case["expected"]["lia"]["applies"]:
+                    self.assertEqual(lines.count(sentence), 1)
+                else:
+                    self.assertNotIn(sentence, lines)
+
+    def test_per_child_scope_note_only_with_two_or_more_children(self):
+        note = "The per-child allocation (FC 4055(b)(8)) is not shown."
+        for case in load_cases():
+            with self.subTest(case=case["id"]):
+                lines = report_for(case).split("\n")
+                if case["inputs"]["children"] >= 2:
+                    self.assertIn(note, lines)
+                else:
+                    self.assertNotIn(note, lines)
+                    self.assertNotIn("per-child", "\n".join(lines))
+
+    def test_per_child_scope_note_appears_once_after_time_share_note(self):
+        note = "The per-child allocation (FC 4055(b)(8)) is not shown."
+        for case_id in ("G2", "G3", "G8"):
+            with self.subTest(case=case_id):
+                text = report_for(case_by_id(case_id))
+                lines = text.split("\n")
+                self.assertEqual(text.count("per-child allocation"), 1)
+                self.assertEqual(lines.count(note), 1)
+                self.assertEqual(lines.index(note), lines.index(NOTE_TIME_SHARE) + 1)
 
 
 if __name__ == "__main__":
