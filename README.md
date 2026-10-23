@@ -1,11 +1,12 @@
 # family-law-toolkit
 
-Tools for people preparing California family-law paperwork: calculate guideline child support, compare drafts, and assemble exhibit packets and binders.
+Tools for people preparing California family-law paperwork. Today: step 1 of a guideline child-support calculator. Not built yet: comparing drafts, and assembling exhibit packets and binders.
 
 Educational; not legal advice; not certified for court filing; consult counsel.
 
-Early development. This repository is private and not yet published, and
-nothing here is ready to use yet.
+Early development, and not ready for other people to use. This repository is
+private and not yet published. One command exists: step 1 of a guideline
+child-support calculator. Nothing else is built yet.
 
 - What changes, and when: [CHANGELOG.md](CHANGELOG.md)
 - How changes are made: [CONTRIBUTING.md](CONTRIBUTING.md)
