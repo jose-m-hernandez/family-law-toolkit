@@ -23,5 +23,6 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - SECURITY.md now promises a best-effort reply to a private report, not a guaranteed one.
 - CONTRIBUTING.md now says every change is reviewed independently before it lands.
+- The one-line CLAUDE.md that pointed Claude Code at AGENTS.md is removed; Claude Code now reads AGENTS.md directly.
 - The support report names the state minimum wage (Lab. Code 1182.12), states what the low-income presumption is, and notes that the per-child allocation is not shown when there are two or more children.
 - AGENTS.md and the README now say that one command ships, step 1 of the child-support calculator, and that comparing drafts and assembling exhibit packets and binders do not exist yet.
