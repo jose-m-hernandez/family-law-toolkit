@@ -18,6 +18,9 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - A guideline child-support calculator, step 1: the Family Code section 4055 formula on user-entered net disposable income, with hand-derived test cases and a text report.
 - A CI check that fails a pull request unless CHANGELOG.md gains at least one new entry under "## [Unreleased]" (or the change is a release that moves those entries into a dated section). It prints counts only. Removing one entry and adding another counts as no change, so keep the old line or add a second.
 - Tests that pin six more behaviours of the CHANGELOG check: trailing spaces after a heading, tab and nested bullets, repeated entries in a release, and exit 2 on an unexpected internal error.
+- The child-support calculator, step 2: with two or more children and the new `--same-time-sharing-arrangement yes` flag (all children share one time-sharing arrangement), the report shows the FC 4055(b)(8) allocation per child. When the low-income adjustment applies, it shows the allocation at both ends of the range. The per-child amounts add up to the support amount, or to each end of the range.
+- `docs/sources/`: the text of FC 4055 that the calculator follows, with where it comes from and how to check it.
+- Python API: `compute()` takes a sixth, optional argument, `same_time_sharing_arrangement` ("yes", "no" or None, the default), and its result carries a field of the same name. A call with five arguments returns the same computed values as before, and the new field is None. The new function `allocation(result)` returns the per-child allocation, or None unless there are two or more children, the argument is "yes", and a parent pays.
 
 ### Changed
 

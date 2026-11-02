@@ -1,4 +1,4 @@
-"""Command line: python3 -m family_law_toolkit.support --a-ndi ... (all flags required)."""
+"""Command line: python3 -m family_law_toolkit.support --a-ndi ... (five flags required, one optional)."""
 
 import argparse
 import sys
@@ -26,6 +26,9 @@ def _build_parser():
     parser.add_argument("--a-time-percent", required=True)
     parser.add_argument("--children", required=True, type=int)
     parser.add_argument("--minimum-wage-hourly", required=True)
+    parser.add_argument(
+        "--same-time-sharing-arrangement", choices=["yes", "no"], required=False
+    )
     return parser
 
 
@@ -38,6 +41,7 @@ def main(argv=None):
             args.a_time_percent,
             args.children,
             args.minimum_wage_hourly,
+            args.same_time_sharing_arrangement,
         )
     except ValueError as error:
         sys.stderr.write("python3 -m family_law_toolkit.support: error: %s\n" % error)
