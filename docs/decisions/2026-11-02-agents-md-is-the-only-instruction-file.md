@@ -14,9 +14,10 @@ The earlier record kept a one-line `CLAUDE.md` containing `@AGENTS.md` so that
 Claude Code would load `AGENTS.md`. Claude Code now reads `AGENTS.md` directly,
 so the bridge is gone.
 
-Any `CLAUDE.md` in the repository, even a one-line one, stops Claude Code
-(measured on 2.1.309) from loading `AGENTS.md` files on its own. Adding one back
-would break that.
+In a test on Claude Code 2.1.309 (2026-10-23), `CLAUDE.md` files in parent
+folders stopped Claude Code from loading the repository's own `AGENTS.md`. A
+`CLAUDE.md` inside the repository would sit in the same chain, so this
+repository keeps none.
 
 The earlier reason still holds: one instruction file means the instructions
 cannot drift between agents.
