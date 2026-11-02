@@ -12,6 +12,7 @@ from family_law_toolkit.support.guideline import compute, fixed, money
 
 GOLDEN_PATH = Path(__file__).resolve().parent / "golden" / "guideline_step1.json"
 GUIDELINE_PATH = Path(guideline.__file__)
+GOLDEN_STEP2_PATH = Path(__file__).resolve().parent / "golden" / "guideline_step2.json"
 
 
 def load_cases():
@@ -29,8 +30,10 @@ def run(inputs):
     )
 
 
-def quick(a_ndi="4000.00", b_ndi="2000.00", time="0", children=1, wage="21.00"):
-    return compute(a_ndi, b_ndi, time, children, wage)
+def quick(a_ndi="4000.00", b_ndi="2000.00", time="0", children=1, wage="21.00", flag=None):
+    if flag is None:
+        return compute(a_ndi, b_ndi, time, children, wage)
+    return compute(a_ndi, b_ndi, time, children, wage, same_time_sharing_arrangement=flag)
 
 
 class GuidelineTests(unittest.TestCase):
@@ -196,13 +199,30 @@ class GuidelineTests(unittest.TestCase):
         )
         self.assertGreater(result.lia.max_reduction, 0)
 
-    def test_compute_takes_exactly_five_inputs(self):
+    def test_compute_takes_five_inputs_and_one_optional(self):
         # No parameter can request the FC 4055(b)(6) default-proceeding rule.
-        names = list(inspect.signature(compute).parameters)
+        parameters = inspect.signature(compute).parameters
         self.assertEqual(
-            names,
-            ["a_ndi", "b_ndi", "a_time_percent", "children", "minimum_wage_hourly"],
+            list(parameters),
+            ["a_ndi", "b_ndi", "a_time_percent", "children", "minimum_wage_hourly",
+             "same_time_sharing_arrangement"],
         )
+        self.assertIsNone(parameters["same_time_sharing_arrangement"].default)
+        for name in list(parameters)[:5]:
+            self.assertIs(parameters[name].default, inspect.Parameter.empty)
+
+    def test_same_time_sharing_arrangement_values(self):
+        for value in (None, "yes", "no"):
+            with self.subTest(value=value):
+                result = compute("4000.00", "2000.00", "0", 2, "21.00",
+                                 same_time_sharing_arrangement=value)
+                self.assertEqual(result.same_time_sharing_arrangement, value)
+        for value in ("maybe", "YES", "", True, 1):
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError) as caught:
+                    compute("4000.00", "2000.00", "0", 2, "21.00",
+                            same_time_sharing_arrangement=value)
+                self.assertIn("same_time_sharing_arrangement", str(caught.exception))
 
     def test_invalid_inputs_rejected(self):
         bad = [
@@ -236,6 +256,91 @@ class GuidelineTests(unittest.TestCase):
                 self.assertNotIsInstance(node.value, float)
             if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
                 self.assertNotEqual(node.func.id, "float")
+
+    def test_golden_step2_allocation(self):
+        with GOLDEN_STEP2_PATH.open(encoding="utf-8") as handle:
+            cases = json.load(handle)["cases"]
+        self.assertEqual([case["id"] for case in cases], ["S1", "S2", "S3", "S4", "S5"])
+        for case in cases:
+            with self.subTest(case=case["id"]):
+                inputs = case["inputs"]
+                expected = case["expected"]
+                result = compute(
+                    inputs["a_ndi"], inputs["b_ndi"], inputs["a_time_percent"],
+                    inputs["children"], inputs["minimum_wage_hourly"],
+                    same_time_sharing_arrangement=inputs["same_time_sharing_arrangement"],
+                )
+                self.assertEqual(money(result.support), expected["support"])
+                allocation = guideline.allocation(result)
+                ends = {"top": allocation.top}
+                if allocation.bottom is not None:
+                    ends["bottom"] = allocation.bottom
+                self.assertEqual(set(ends), set(expected["allocation"]))
+                for name, end in ends.items():
+                    want = expected["allocation"][name]
+                    self.assertEqual(
+                        [guideline.cents_text(c) for c in end.cumulative], want["cumulative"]
+                    )
+                    self.assertEqual(
+                        [guideline.cents_text(c) for c in end.per_child], want["per_child"]
+                    )
+
+    def test_allocation_exact_amounts_and_rounding_rule(self):
+        # R8 on S5: the exact cumulative amounts are cs_formula x each multiplier;
+        # per-child amounts are differences of the DISPLAYED running totals.
+        result = compute("12105.04", "1639.79", "60", 4, "21.00",
+                         same_time_sharing_arrangement="yes")
+        allocation = guideline.allocation(result)
+        self.assertIsNone(allocation.bottom)
+        exact = allocation.top.exact_cumulative
+        for count, value in enumerate(exact, start=1):
+            self.assertEqual(value, abs(result.cs_formula) * guideline.MULTIPLIERS[count])
+        shown = allocation.top.cumulative
+        self.assertEqual(shown[-1], 259719)
+        self.assertEqual(allocation.top.per_child[0], shown[0])
+        self.assertEqual(
+            list(allocation.top.per_child[1:]),
+            [b - a for a, b in zip(shown, shown[1:])],
+        )
+        self.assertEqual(sum(allocation.top.per_child), shown[-1])
+        # Rounding each exact difference alone does NOT add to the total here.
+        steps = [exact[0]] + [b - a for a, b in zip(exact, exact[1:])]
+        alone = [int((2 * s * 100 + 1) // 2) for s in steps]  # half-up for positives
+        self.assertNotEqual(sum(alone), shown[-1])
+
+    def test_allocation_rounding_is_half_up_at_exact_half_cents(self):
+        # Python's round() is half-even and would give 2 for 0.025.
+        self.assertEqual(guideline._cents(Fraction(1, 200)), 1)  # 0.005
+        self.assertEqual(guideline._cents(Fraction(5, 200)), 3)  # 0.025
+        self.assertEqual(guideline._cents(Fraction(7, 200)), 4)  # 0.035
+        self.assertEqual(guideline._cents(Fraction(1, 300)), 0)  # 0.00333..., below the half
+
+    def test_allocation_bottom_end_is_support_times_one_minus_fraction(self):
+        result = compute("2258.50", "612.53", "45", 3, "21.00",
+                         same_time_sharing_arrangement="yes")
+        bottom = guideline.allocation(result).bottom
+        fraction = (result.lia.threshold - result.a_ndi) / result.lia.threshold
+        self.assertEqual(bottom.exact_cumulative[-1], result.lia.range_low)
+        for count, value in enumerate(bottom.exact_cumulative, start=1):
+            self.assertEqual(
+                value,
+                abs(result.cs_formula) * guideline.MULTIPLIERS[count] * (1 - fraction),
+            )
+
+    def test_allocation_is_none_unless_it_applies(self):
+        self.assertIsNone(guideline.allocation(quick(children=3)))
+        self.assertIsNone(guideline.allocation(quick(children=3, flag="no")))
+        self.assertIsNone(guideline.allocation(quick(children=1, flag="yes")))
+        self.assertIsNone(guideline.allocation(quick("0", "0", "0", 3, flag="yes")))
+        self.assertIsNotNone(guideline.allocation(quick(children=3, flag="yes")))
+
+    def test_allocation_negative_total_uses_the_absolute_amount(self):
+        result = compute("8208.09", "5127.40", "65", 3, "21.00",
+                         same_time_sharing_arrangement="yes")
+        self.assertLess(result.cs_total, 0)
+        end = guideline.allocation(result).top
+        self.assertEqual(sum(end.per_child), end.cumulative[-1])
+        self.assertTrue(all(c > 0 for c in end.per_child))
 
 
 if __name__ == "__main__":

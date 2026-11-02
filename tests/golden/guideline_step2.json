@@ -1,0 +1,66 @@
+{
+  "statute": {"section": "California Family Code 4055", "added_by": "Stats. 2023, ch. 213, sec. 3", "operative": "2024-09-01", "xml_sha256": "63803b8acd6555bc395704bec61ebcbc1a8b7556e0a2a783e12e2f0253e8a463"},
+  "readings": [
+    "R1 The hourly minimum wage is a required user input; the toolkit carries no wage figure (FC 4055(b)(7)).",
+    "R2 Monthly threshold = hourly minimum wage x 40 x 52 / 12, kept exact; this is the toolkit's reading of FC 4055(b)(7).",
+    "R3 Table rows have inclusive upper bounds: TN <= 2900 row 1; <= 5000 row 2; <= 10000 row 3; <= 15000 row 4; otherwise row 5.",
+    "R4 Exact rational arithmetic throughout; only displayed amounts are rounded, to cents, half-up, from the exact value.",
+    "R5 Order: formula (a), children multiplier (b)(4), payer by sign (b)(5), low-income test on the payer's NDI with strictly less than (b)(7), shown as a range (c).",
+    "High earner: Parent A is the high earner when A's NDI is greater than or equal to B's (FC 4055(b)(1)(C)).",
+    "R7 When (b)(7) applies, the (b)(8) allocation is shown at each end of the range and never for a point inside it; the top end allocates the unadjusted amounts for 1..n children, the bottom end the amounts reduced by the maximum (b)(7) fraction. This is a reading, because (b)(7) never says the (b)(8) amounts are adjusted.",
+    "R8 Each cumulative amount (1..n children) is computed exactly and displayed rounded half-up to the cent; each per-child amount is the difference between consecutive displayed cumulative amounts, so the per-child amounts add to the shown total.",
+    "Rounding the amount for each number of children to the cent before taking the FC 4055(b)(8) differences is this toolkit's reading; FC 4055 does not say how to round.",
+    "Applying the largest FC 4055(b)(7) reduction to the amount for each number of children is this toolkit's reading; the statute does not say that the (b)(8) amounts are adjusted.",
+    "R9 Per-child amounts are labelled by position only, youngest to oldest; no names, ages or dates.",
+    "R10 (b)(8) does not apply when the children have different time-sharing arrangements; the allocation is computed only when the user states one shared arrangement (--same-time-sharing-arrangement yes), and every case here sets that flag to yes.",
+    "R11 The allocation is the one used when the court orders nothing else; a negative result allocates the absolute amount the lower earner pays, shown positive; cumulative amounts are shown before the differences; the limit stays 1 to 10 children."
+  ],
+  "cases": [
+    {"id": "S1",
+     "inputs": {"a_ndi": "6919.09", "b_ndi": "2255.71", "a_time_percent": "35", "children": 2, "minimum_wage_hourly": "21.00", "same_time_sharing_arrangement": "yes"},
+     "expected": {"tn": "9174.80", "high_earner": "A", "h_percent": "35", "k_row": 3, "k": "0.337500",
+                  "cs_formula": "1251.42", "multiplier": "1.6", "cs_total": "2002.27",
+                  "payer": "A", "support": "2002.27",
+                  "lia": {"threshold": "3640.00", "applies": false, "max_reduction": "0.00", "range_low": "2002.27", "range_high": "2002.27"},
+                  "allocation": {
+      "top": {"cumulative": ["1251.42", "2002.27"], "per_child": ["1251.42", "750.85"]}
+                  }}},
+    {"id": "S2",
+     "inputs": {"a_ndi": "8208.09", "b_ndi": "5127.40", "a_time_percent": "65", "children": 3, "minimum_wage_hourly": "21.00", "same_time_sharing_arrangement": "yes"},
+     "expected": {"tn": "13335.49", "high_earner": "A", "h_percent": "65", "k_row": 4, "k": "0.286749",
+                  "cs_formula": "-131.90", "multiplier": "2", "cs_total": "-263.80",
+                  "payer": "B", "support": "263.80",
+                  "lia": {"threshold": "3640.00", "applies": false, "max_reduction": "0.00", "range_low": "263.80", "range_high": "263.80"},
+                  "allocation": {
+      "top": {"cumulative": ["131.90", "211.04", "263.80"], "per_child": ["131.90", "79.14", "52.76"]}
+                  }}},
+    {"id": "S3",
+     "inputs": {"a_ndi": "4459.28", "b_ndi": "523.82", "a_time_percent": "40", "children": 5, "minimum_wage_hourly": "21.00", "same_time_sharing_arrangement": "yes"},
+     "expected": {"tn": "4983.10", "high_earner": "A", "h_percent": "40", "k_row": 2, "k": "0.348916",
+                  "cs_formula": "860.44", "multiplier": "2.5", "cs_total": "2151.10",
+                  "payer": "A", "support": "2151.10",
+                  "lia": {"threshold": "3640.00", "applies": false, "max_reduction": "0.00", "range_low": "2151.10", "range_high": "2151.10"},
+                  "allocation": {
+      "top": {"cumulative": ["860.44", "1376.71", "1720.88", "1979.01", "2151.10"], "per_child": ["860.44", "516.27", "344.17", "258.13", "172.09"]}
+                  }}},
+    {"id": "S4",
+     "inputs": {"a_ndi": "2258.50", "b_ndi": "612.53", "a_time_percent": "45", "children": 3, "minimum_wage_hourly": "21.00", "same_time_sharing_arrangement": "yes"},
+     "expected": {"tn": "2871.03", "high_earner": "A", "h_percent": "45", "k_row": 1, "k": "0.289493",
+                  "cs_formula": "279.81", "multiplier": "2", "cs_total": "559.61",
+                  "payer": "A", "support": "559.61",
+                  "lia": {"threshold": "3640.00", "applies": true, "max_reduction": "212.39", "range_low": "347.22", "range_high": "559.61"},
+                  "allocation": {
+      "top": {"cumulative": ["279.81", "447.69", "559.61"], "per_child": ["279.81", "167.88", "111.92"]},
+      "bottom": {"cumulative": ["173.61", "277.78", "347.22"], "per_child": ["173.61", "104.17", "69.44"]}
+                  }}},
+    {"id": "S5",
+     "inputs": {"a_ndi": "12105.04", "b_ndi": "1639.79", "a_time_percent": "60", "children": 4, "minimum_wage_hourly": "21.00", "same_time_sharing_arrangement": "yes"},
+     "expected": {"tn": "13744.83", "high_earner": "A", "h_percent": "60", "k_row": 4, "k": "0.292683",
+                  "cs_formula": "1129.21", "multiplier": "2.3", "cs_total": "2597.19",
+                  "payer": "A", "support": "2597.19",
+                  "lia": {"threshold": "3640.00", "applies": false, "max_reduction": "0.00", "range_low": "2597.19", "range_high": "2597.19"},
+                  "allocation": {
+      "top": {"cumulative": ["1129.21", "1806.74", "2258.42", "2597.19"], "per_child": ["1129.21", "677.53", "451.68", "338.77"]}
+                  }}}
+  ]
+}
