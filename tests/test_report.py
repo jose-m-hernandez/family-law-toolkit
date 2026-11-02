@@ -3,6 +3,7 @@
 import inspect
 import json
 import os
+import re
 import subprocess
 import sys
 import unittest
@@ -11,7 +12,7 @@ from unittest import mock
 
 from family_law_toolkit import TOOLKIT_NAME, __version__
 from family_law_toolkit.support import __main__ as cli_main
-from family_law_toolkit.support import report
+from family_law_toolkit.support import guideline, report
 from family_law_toolkit.support.guideline import compute, money
 from family_law_toolkit.support.report import (
     IDENTITY_LINE,
@@ -25,6 +26,8 @@ from family_law_toolkit.support.report import (
 
 ROOT = Path(__file__).resolve().parent.parent
 GOLDEN_PATH = ROOT / "tests" / "golden" / "guideline_step1.json"
+GOLDEN_STEP2_PATH = ROOT / "tests" / "golden" / "guideline_step2.json"
+GOLDEN_REPORTS_PATH = ROOT / "tests" / "golden" / "guideline_step1_reports.json"
 FORBIDDEN_WORDS = ("filing-ready", "court-ready", "court-grade", "validated", "accurate")
 
 
@@ -82,6 +85,151 @@ def case_by_id(case_id):
 
 
 G1_ARGS = cli_args(case_by_id("G1"))
+
+
+FLAG = "--same-time-sharing-arrangement"
+HEADING_OLD = "Guideline child support, step 1 (California Family Code section 4055)"
+HEADING_NEW = "Guideline child support (California Family Code section 4055)"
+E1_LINE = "The per-child allocation (FC 4055(b)(8)) is not shown."
+E2_LINE = (
+    "The per-child allocation (FC 4055(b)(8)) is shown only if you add "
+    "--same-time-sharing-arrangement yes. It does not apply when the children "
+    "have different time-sharing arrangements."
+)
+E3_LINE = (
+    "The per-child allocation (FC 4055(b)(8)) does not apply, because the "
+    "children have different time-sharing arrangements."
+)
+E4_LINE = (
+    "Guideline support is 0.00, so there is no amount to allocate per child "
+    "(FC 4055(b)(8))."
+)
+C1_LINE = "Allocation per child (FC 4055(b)(8))"
+C2_LINE = (
+    "  The statute uses this allocation unless the court orders otherwise "
+    "(FC 4055(b)(8))."
+)
+C5_SUPPORT_LINE = (
+    "  Child 1 is the amount of support for 1 child. Child 2 is the amount for 2 "
+    "children less the amount for 1 child, and so on. Together they add up to "
+    "the support amount above."
+)
+C5_END_LINE = (
+    "  Child 1 is the amount of support for 1 child. Child 2 is the amount for 2 "
+    "children less the amount for 1 child, and so on. Together they add up to "
+    "that end of the range."
+)
+C6_LINE = (
+    "  This toolkit rounds the amount for each number of children to the cent "
+    "before taking the differences; FC 4055 does not say how to round."
+)
+C7_LINE = (
+    "  Where an amount above shows 0.00, the exact amount is above zero but "
+    "under one cent. It shows 0.00 because this toolkit rounds the running "
+    "totals to the cent before taking the differences. It is not an allocation "
+    "of zero support."
+)
+D1_LINE = "  At the top of the support range (no low-income reduction):"
+D2_LINE = "  At the bottom of the support range (the largest permitted reduction):"
+D3_LINE = (
+    "  The court sets the amount within the range, and FC 4055(b)(8) then "
+    "allocates the amount it orders. No allocation is shown for amounts between "
+    "the two ends shown."
+)
+D4_LINE = (
+    "  This toolkit applies the largest reduction to the amount for each number "
+    "of children; FC 4055(b)(7) does not say that the (b)(8) amounts are adjusted."
+)
+CHILD_RE = re.compile(
+    r"^  Child (\d+)(, youngest|, oldest)? \(FC 4055\(b\)\(8\)\): (-?\d+\.\d\d)$"
+)
+CUM_RE = re.compile(
+    r"^  Amount of support for (\d+) (?:child|children) \(FC 4055\(b\)\(4\)\): (-?\d+\.\d\d)$"
+)
+RANGE_RE = re.compile(r"^  Support range \(FC 4055\(c\)\): (\d+\.\d\d) to (\d+\.\d\d)$")
+SUPPORT_RE = re.compile(r"^  Support amount \(FC 4055\(a\), \(b\)\(4\)\): (\d+\.\d\d)$")
+
+# Money inputs of S1 and S4 (invented), reused for the 2-10 children sweeps.
+S1_MONEY = ("6919.09", "2255.71", "35")
+S4_MONEY = ("2258.50", "612.53", "45")
+
+
+def render_for(a_ndi, b_ndi, a_time, children, flag=None, wage="21.00"):
+    kwargs = {} if flag is None else {"same_time_sharing_arrangement": flag}
+    return render_report(compute(a_ndi, b_ndi, a_time, children, wage, **kwargs))
+
+
+def lines_of(text):
+    """Report lines with the page headers (identity line and blank line) dropped."""
+    lines = []
+    for page in text.split("\f"):
+        lines += page.split("\n")[2:]
+    return lines
+
+
+def step2_cases():
+    with GOLDEN_STEP2_PATH.open(encoding="utf-8") as handle:
+        return json.load(handle)["cases"]
+
+
+def step2_report(case):
+    inputs = case["inputs"]
+    return render_for(
+        inputs["a_ndi"], inputs["b_ndi"], inputs["a_time_percent"],
+        inputs["children"], inputs["same_time_sharing_arrangement"],
+        inputs["minimum_wage_hourly"],
+    )
+
+
+def cents(text):
+    whole, part = text.split(".")
+    return int(whole) * 100 + int(part)
+
+
+def block_lines(text):
+    """The allocation block: from its heading to the next blank line (or the end)."""
+    lines = lines_of(text)
+    start = lines.index(C1_LINE)
+    end = start
+    while end < len(lines) and lines[end] != "":
+        end += 1
+    return lines[start:end]
+
+
+def end_groups(text):
+    """Per range end: {'cumulative': [...], 'per_child': [...]} in cents.
+
+    A report without a range has one group ('top'); under R7 it has 'top' and
+    'bottom', split at the D1 and D2 lines.
+    """
+    block = block_lines(text)
+    if D1_LINE in block:
+        marks = [("top", block.index(D1_LINE)), ("bottom", block.index(D2_LINE))]
+        spans = {
+            "top": block[marks[0][1]:marks[1][1]],
+            "bottom": block[marks[1][1]:],
+        }
+    else:
+        spans = {"top": block}
+    groups = {}
+    for name, span in spans.items():
+        cumulative = [cents(m.group(2)) for m in map(CUM_RE.match, span) if m]
+        per_child = [cents(m.group(3)) for m in map(CHILD_RE.match, span) if m]
+        groups[name] = {"cumulative": cumulative, "per_child": per_child}
+    return groups
+
+
+def printed_figures(text):
+    """The cents the report prints: {'top': cents, 'bottom': cents or absent}."""
+    for line in lines_of(text):
+        match = RANGE_RE.match(line)
+        if match:
+            return {"bottom": cents(match.group(1)), "top": cents(match.group(2))}
+    for line in lines_of(text):
+        match = SUPPORT_RE.match(line)
+        if match:
+            return {"top": cents(match.group(1))}
+    raise AssertionError("no printed support figure")
 
 
 class ReportTests(unittest.TestCase):
@@ -345,7 +493,7 @@ class ReportTests(unittest.TestCase):
         self.assertEqual(
             flags,
             ["--a-ndi", "--a-time-percent", "--b-ndi", "--children",
-             "--minimum-wage-hourly"],
+             "--minimum-wage-hourly", "--same-time-sharing-arrangement"],
         )
         # No environment variable is consulted by the report or the command line.
         for module in (report, cli_main):
@@ -407,26 +555,377 @@ class ReportTests(unittest.TestCase):
                 else:
                     self.assertNotIn(sentence, lines)
 
-    def test_per_child_scope_note_only_with_two_or_more_children(self):
-        note = "The per-child allocation (FC 4055(b)(8)) is not shown."
+    def test_old_per_child_note_is_printed_for_no_child_count(self):
+        # The old note (E1) is gone for every child count and every flag state.
+        old = "The per-child allocation (FC 4055(b)(8)) is not shown."
+        for children in range(1, 11):
+            for flag in (None, "yes", "no"):
+                with self.subTest(children=children, flag=flag):
+                    self.assertNotIn(old, render_for("4000.00", "2000.00", "20", children, flag))
         for case in load_cases():
             with self.subTest(case=case["id"]):
-                lines = report_for(case).split("\n")
-                if case["inputs"]["children"] >= 2:
-                    self.assertIn(note, lines)
-                else:
-                    self.assertNotIn(note, lines)
-                    self.assertNotIn("per-child", "\n".join(lines))
+                self.assertNotIn(old, report_for(case))
 
-    def test_per_child_scope_note_appears_once_after_time_share_note(self):
-        note = "The per-child allocation (FC 4055(b)(8)) is not shown."
+    def test_per_child_note_without_flag_appears_once_after_time_share_note(self):
+        # R10: the how-to line (E2) replaces the old note; only with 2+ children.
         for case_id in ("G2", "G3", "G8"):
             with self.subTest(case=case_id):
                 text = report_for(case_by_id(case_id))
                 lines = text.split("\n")
                 self.assertEqual(text.count("per-child allocation"), 1)
-                self.assertEqual(lines.count(note), 1)
-                self.assertEqual(lines.index(note), lines.index(NOTE_TIME_SHARE) + 1)
+                self.assertEqual(lines.count(E2_LINE), 1)
+                self.assertEqual(lines.index(E2_LINE), lines.index(NOTE_TIME_SHARE) + 1)
+        for case_id in ("G1", "G4", "G5", "G6"):
+            with self.subTest(case=case_id):
+                self.assertNotIn("per-child", report_for(case_by_id(case_id)))
+
+
+class AllocationReportTests(unittest.TestCase):
+    """Step 2: the FC 4055(b)(8) allocation per child (plan section 7)."""
+
+    def test_1_flag_yes_prints_one_labelled_line_per_child(self):  # test 1
+        for children in (2, 3, 4):
+            with self.subTest(children=children):
+                text = render_for(*S1_MONEY, children, "yes")
+                lines = lines_of(text)
+                self.assertIn(C1_LINE, lines)
+                self.assertIn(C2_LINE, lines)
+                child_lines = [l for l in lines if CHILD_RE.match(l)]
+                self.assertEqual(len(child_lines), children)
+                for position, line in enumerate(child_lines, start=1):
+                    tag = ""
+                    if position == 1:
+                        tag = ", youngest"
+                    if position == children:
+                        tag = ", oldest"
+                    self.assertTrue(
+                        line.startswith("  Child %d%s (FC 4055(b)(8)): " % (position, tag)),
+                        line,
+                    )
+                cumulative = [l for l in lines if CUM_RE.match(l)]
+                self.assertEqual(len(cumulative), children)
+                for count, line in enumerate(cumulative, start=1):
+                    noun = "child" if count == 1 else "children"
+                    self.assertTrue(
+                        line.startswith(
+                            "  Amount of support for %d %s (FC 4055(b)(4)): " % (count, noun)
+                        ),
+                        line,
+                    )
+                # R11(c): the cumulative amounts come before the differences.
+                self.assertLess(lines.index(cumulative[-1]), lines.index(child_lines[0]))
+                self.assertIn(C5_SUPPORT_LINE, lines)
+                self.assertIn(C6_LINE, lines)
+                self.assertNotIn(D1_LINE, lines)
+
+    def test_1_two_children_are_youngest_and_oldest(self):
+        lines = lines_of(render_for(*S1_MONEY, 2, "yes"))
+        tags = [m.group(2) for m in map(CHILD_RE.match, lines) if m]
+        self.assertEqual(tags, [", youngest", ", oldest"])
+
+    def test_2_per_child_amounts_add_to_the_printed_figure(self):  # test 2
+        reports = [(case["id"], step2_report(case)) for case in step2_cases()]
+        for money_inputs in (S1_MONEY, S4_MONEY):
+            for children in range(2, 11):
+                reports.append(
+                    ("%s/%d" % (money_inputs[0], children),
+                     render_for(*money_inputs, children, "yes"))
+                )
+        for name, text in reports:
+            with self.subTest(case=name):
+                groups = end_groups(text)
+                printed = printed_figures(text)
+                self.assertEqual(set(groups), set(printed))
+                for end, group in groups.items():
+                    self.assertEqual(sum(group["per_child"]), printed[end])
+                    self.assertEqual(group["cumulative"][-1], printed[end])
+
+    def test_2_s5_exact_differences_alone_would_not_add_up(self):
+        # Guards R8: the displayed per-child amounts add up, so they are
+        # differences of displayed running totals, not rounded exact differences.
+        text = step2_report(next(c for c in step2_cases() if c["id"] == "S5"))
+        group = end_groups(text)["top"]
+        self.assertEqual(sum(group["per_child"]), printed_figures(text)["top"])
+        self.assertEqual(
+            group["per_child"],
+            [group["cumulative"][0]]
+            + [b - a for a, b in zip(group["cumulative"], group["cumulative"][1:])],
+        )
+
+    def test_3_one_child_prints_no_allocation(self):  # test 3
+        for flag in (None, "yes", "no"):
+            with self.subTest(flag=flag):
+                text = render_for(*S1_MONEY, 1, flag)
+                self.assertNotIn(C1_LINE, text)
+                self.assertNotIn("Child 1", text)
+                self.assertNotIn("per-child", text)
+
+    def test_5_b_pays_allocates_the_amount_b_pays(self):  # test 5
+        case = next(c for c in step2_cases() if c["id"] == "S2")
+        text = step2_report(case)
+        lines = lines_of(text)
+        self.assertIn("  Paying parent (FC 4055(b)(5)): Parent B", lines)
+        self.assertEqual(
+            [m.group(3) for m in map(CHILD_RE.match, lines) if m],
+            case["expected"]["allocation"]["top"]["per_child"],
+        )
+
+    def test_6_golden_step2_cases_match_to_the_cent(self):  # test 6
+        for case in step2_cases():
+            with self.subTest(case=case["id"]):
+                groups = end_groups(step2_report(case))
+                expected = case["expected"]["allocation"]
+                self.assertEqual(set(groups), set(expected))
+                for end, group in groups.items():
+                    self.assertEqual(
+                        group["cumulative"], [cents(v) for v in expected[end]["cumulative"]]
+                    )
+                    self.assertEqual(
+                        group["per_child"], [cents(v) for v in expected[end]["per_child"]]
+                    )
+
+    def test_7_identity_line_on_every_page_with_the_allocation(self):  # test 7
+        for money_inputs in (S1_MONEY, S4_MONEY):
+            for children in (2, 5, 10):
+                with self.subTest(money=money_inputs[0], children=children):
+                    text = render_for(*money_inputs, children, "yes")
+                    for page in text.split("\f"):
+                        lines = page.split("\n")
+                        self.assertEqual(lines[0], IDENTITY_LINE)
+                        self.assertEqual(lines[1], "")
+                        self.assertLessEqual(len(lines), report.PAGE_LINES)
+        self.assertGreaterEqual(len(render_for(*S4_MONEY, 10, "yes").split("\f")), 2)
+
+    def test_8_range_shows_both_ends_and_nothing_inside(self):  # test 8
+        case = next(c for c in step2_cases() if c["id"] == "S4")
+        lines = lines_of(step2_report(case))
+        self.assertEqual(lines.count(C1_LINE), 1)
+        self.assertEqual(lines.count(C2_LINE), 1)
+        self.assertEqual(lines.count(D1_LINE), 1)
+        self.assertEqual(lines.count(D2_LINE), 1)
+        self.assertEqual(lines.count(C5_END_LINE), 2)
+        self.assertEqual(lines.count(C5_SUPPORT_LINE), 0)
+        self.assertEqual(lines.count(C6_LINE), 1)
+        self.assertEqual(lines.count(D3_LINE), 1)
+        self.assertEqual(lines.count(D4_LINE), 1)
+        self.assertLess(lines.index(D1_LINE), lines.index(D2_LINE))
+        self.assertLess(lines.index(D2_LINE), lines.index(C6_LINE))
+        self.assertLess(lines.index(C6_LINE), lines.index(D3_LINE))
+        self.assertLess(lines.index(D3_LINE), lines.index(D4_LINE))
+        # Exactly two sets of per-child lines (3 children each), none for a point inside.
+        self.assertEqual(len([l for l in lines if CHILD_RE.match(l)]), 6)
+        self.assertEqual(len([l for l in lines if CUM_RE.match(l)]), 6)
+        self.assertIn("  Support range (FC 4055(c)): 347.22 to 559.61", lines)
+
+    def test_10_r10_three_states(self):  # test 10
+        for children in (2, 3, 10):
+            with self.subTest(children=children):
+                absent = lines_of(render_for(*S1_MONEY, children))
+                no = lines_of(render_for(*S1_MONEY, children, "no"))
+                yes = lines_of(render_for(*S1_MONEY, children, "yes"))
+                self.assertEqual(absent.count(E2_LINE), 1)
+                self.assertNotIn(E3_LINE, absent)
+                self.assertNotIn(C1_LINE, absent)
+                self.assertEqual(no.count(E3_LINE), 1)
+                self.assertNotIn(E2_LINE, no)
+                self.assertNotIn(C1_LINE, no)
+                self.assertIn(C1_LINE, yes)
+                self.assertNotIn(E2_LINE, yes)
+                self.assertNotIn(E3_LINE, yes)
+                self.assertNotIn(E1_LINE, yes)
+                # A3: the echo is the last line of "Inputs as given", only with the flag.
+                echo = "  All children share one time-sharing arrangement: "
+                self.assertFalse(any(l.startswith(echo) for l in absent))
+                self.assertEqual(
+                    no[no.index("Formula") - 2], echo + "no"
+                )
+                self.assertEqual(
+                    yes[yes.index("Formula") - 2], echo + "yes"
+                )
+                self.assertEqual(no[no.index("Formula") - 1], "")
+        for children in (1,):
+            reports = {render_for(*S1_MONEY, children, flag) for flag in (None, "yes", "no")}
+            self.assertEqual(len(reports), 1)
+
+    def test_10_cli_flag_accepted_and_rejected(self):
+        done = run_cli(*G1_ARGS, FLAG, "yes")
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(done.stdout, run_cli(*G1_ARGS).stdout)
+        case = next(c for c in step2_cases() if c["id"] == "S1")
+        done = run_cli(*cli_args(case), FLAG, "yes")
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(done.stdout, step2_report(case) + "\n")
+        done = run_cli(*cli_args(case), FLAG, "maybe")
+        self.assertEqual(done.returncode, 2)
+        self.assertEqual(done.stdout, "")
+        self.assertEqual(len(done.stderr.strip().splitlines()), 1)
+        self.assertIn(
+            "python3 -m family_law_toolkit.support: error: argument "
+            "--same-time-sharing-arrangement: invalid choice: 'maybe'",
+            done.stderr,
+        )
+        done = run_cli(*cli_args(case), FLAG)
+        self.assertEqual(done.returncode, 2)
+
+    def test_11_negative_result_names_the_payer_once(self):  # test 11
+        text = render_for("5000.00", "8000.00", "30", 3, "yes")
+        lines = lines_of(text)
+        self.assertEqual(lines.count("  Paying parent (FC 4055(b)(5)): Parent A"), 1)
+        for line in block_lines(text):
+            self.assertNotIn("Parent", line)
+        for line in lines:
+            match = CHILD_RE.match(line) or CUM_RE.match(line)
+            if match:
+                self.assertNotIn("-", match.group(match.lastindex))
+        # The S2 report is the negative-total case in the golden file.
+        s2 = step2_report(next(c for c in step2_cases() if c["id"] == "S2"))
+        self.assertIn("  CS times multiplier (FC 4055(b)(4)): -263.80", lines_of(s2))
+        for case in step2_cases():
+            self.assertNotIn("the amount for each child", step2_report(case).lower())
+
+    def test_12_step1_reports_change_only_by_the_pinned_lines(self):  # test 12
+        with GOLDEN_REPORTS_PATH.open(encoding="utf-8") as handle:
+            fixture = json.load(handle)
+        self.assertEqual(sorted(fixture), ["G%d" % n for n in range(1, 9)])
+        for case in load_cases():
+            with self.subTest(case=case["id"]):
+                old = fixture[case["id"]]
+                lines = old.split("\n")
+                self.assertEqual(lines.count(HEADING_OLD), 1)
+                lines[lines.index(HEADING_OLD)] = HEADING_NEW
+                if case["inputs"]["children"] >= 2:
+                    self.assertEqual(lines.count(E1_LINE), 1)
+                    lines[lines.index(E1_LINE)] = E2_LINE
+                else:
+                    self.assertNotIn(E1_LINE, lines)
+                done = run_cli(*cli_args(case))
+                self.assertEqual(done.returncode, 0, done.stderr)
+                self.assertEqual(done.stdout, "\n".join(lines))
+
+    def test_13_i_ii_no_negative_and_every_exact_amount_positive(self):  # test 13 (i), (ii)
+        for money_inputs in (S1_MONEY, S4_MONEY, ("10000.00", "10.00", "100")):
+            for children in range(2, 11):
+                with self.subTest(money=money_inputs[0], children=children):
+                    result = compute(*money_inputs, children, "21.00",
+                                     same_time_sharing_arrangement="yes")
+                    self.assertGreater(result.support, 0)
+                    text = render_report(result)
+                    for group in end_groups(text).values():
+                        self.assertTrue(all(c >= 0 for c in group["per_child"]))
+                    allocation = guideline.allocation(result)
+                    ends = [allocation.top] + ([allocation.bottom] if allocation.bottom else [])
+                    for end in ends:
+                        exact = end.exact_cumulative
+                        steps = [exact[0]] + [b - a for a, b in zip(exact, exact[1:])]
+                        self.assertTrue(all(step > 0 for step in steps))
+
+    def test_13_iii_c7_prints_if_and_only_if_a_block_amount_shows_zero(self):
+        # (a) tiny payer NDI 1.00 (payer B, H% 100, wage 21.00): the top end has
+        # 0.25 and 0.15, the bottom end is the top end times 1.00/3640.00, which
+        # displays 0.00 for both children, so only the bottom end has zeros.
+        text = render_for("10000.00", "1.00", "100", 2, "yes")
+        groups = end_groups(text)
+        self.assertEqual(groups["top"]["per_child"], [25, 15])
+        self.assertEqual(groups["bottom"]["per_child"], [0, 0])
+        self.assertEqual(lines_of(text).count(C7_LINE), 1)
+        block = block_lines(text)
+        self.assertEqual(block[-1], C7_LINE)  # after D3 and D4
+        self.assertEqual(block[-3:-1], [D3_LINE, D4_LINE])
+        # (b) 10 children, payer NDI 10.00: the bottom end displays 0.01 then
+        # runs of 0.00 and 0.01, so some but not all lines show 0.00.
+        text = render_for("10000.00", "10.00", "100", 10, "yes")
+        groups = end_groups(text)
+        self.assertIn(0, groups["bottom"]["per_child"])
+        self.assertTrue(any(c > 0 for c in groups["bottom"]["per_child"]))
+        self.assertEqual(lines_of(text).count(C7_LINE), 1)
+        # (c) no zero anywhere: S1 and S4 have no C7.
+        for money_inputs, children in ((S1_MONEY, 2), (S4_MONEY, 3)):
+            text = render_for(*money_inputs, children, "yes")
+            self.assertNotIn(C7_LINE, lines_of(text))
+            self.assertTrue(all(c > 0 for g in end_groups(text).values() for c in g["per_child"]))
+        # (d) the iff, over a sweep.
+        for money_inputs in (S1_MONEY, S4_MONEY, ("10000.00", "10.00", "100"),
+                             ("10000.00", "1.00", "100"), ("10000.00", "100.00", "100")):
+            for children in range(2, 11):
+                with self.subTest(money=money_inputs[1], children=children):
+                    text = render_for(*money_inputs, children, "yes")
+                    has_zero = any(
+                        0 in g["per_child"] for g in end_groups(text).values()
+                    )
+                    self.assertEqual(lines_of(text).count(C7_LINE), 1 if has_zero else 0)
+
+    def test_13_iv_no_paying_parent_prints_e4_only(self):
+        # Both incomes 0 (as in test_zero_incomes), and equal incomes at 50%.
+        for inputs in (("0", "0", "0"), ("5000.00", "5000.00", "50")):
+            for children in (2, 3, 10):
+                with self.subTest(inputs=inputs, children=children):
+                    text = render_for(*inputs, children, "yes")
+                    lines = lines_of(text)
+                    self.assertIn("  Paying parent (FC 4055(b)(5)): none", lines)
+                    self.assertEqual(lines.count(E4_LINE), 1)
+                    self.assertNotIn(C1_LINE, lines)
+                    self.assertNotIn(C7_LINE, lines)
+                    self.assertNotIn(E1_LINE, lines)
+                    self.assertNotIn(E2_LINE, lines)
+                    self.assertNotIn(E3_LINE, lines)
+                    self.assertFalse(any(CHILD_RE.match(l) for l in lines))
+                    self.assertEqual(lines.index(E4_LINE), lines.index(NOTE_TIME_SHARE) + 1)
+            # One child: the flag has no effect, so no E4.
+            self.assertNotIn(E4_LINE, render_for(*inputs, 1, "yes"))
+        # Flag absent or no: E4 does not replace E2 or E3.
+        self.assertNotIn(E4_LINE, render_for("0", "0", "0", 2))
+        self.assertNotIn(E4_LINE, render_for("0", "0", "0", 2, "no"))
+
+    def test_13_v_tiny_positive_total_names_a_payer_and_shows_the_block(self):
+        # Exact total above 0 that displays 0.00. (a) payer NDI 0.01 (A, H% 0): the
+        # total is about 0.0026 and the low-income test applies. (b) 5000.00 and
+        # 4999.99 at 50%: HN - H% x TN is 0.005, the total about 0.003, and the
+        # payer's NDI is over the threshold, so one block and no range.
+        for inputs, ranged in ((("0.01", "0.00", "0"), True),
+                               (("5000.00", "4999.99", "50"), False)):
+            with self.subTest(inputs=inputs):
+                text = render_for(*inputs, 2, "yes")
+                lines = lines_of(text)
+                self.assertIn("  Paying parent (FC 4055(b)(5)): Parent A", lines)
+                self.assertIn(C1_LINE, lines)
+                self.assertEqual(lines.count(C7_LINE), 1)
+                self.assertNotIn(E4_LINE, lines)
+                self.assertEqual(D1_LINE in lines, ranged)
+                for group in end_groups(text).values():
+                    self.assertEqual(group["per_child"], [0, 0])
+
+    def test_14_parser_has_exactly_six_options_one_optional(self):  # test 14
+        parser = cli_main._build_parser()
+        self.assertFalse(parser.add_help)
+        options = {}
+        for action in parser._actions:
+            for option in action.option_strings:
+                options[option] = action
+        self.assertEqual(
+            sorted(options),
+            ["--a-ndi", "--a-time-percent", "--b-ndi", "--children",
+             "--minimum-wage-hourly", FLAG],
+        )
+        for name, action in options.items():
+            if name == FLAG:
+                self.assertFalse(action.required)
+                self.assertEqual(list(action.choices), ["yes", "no"])
+            else:
+                self.assertTrue(action.required, name)
+
+    def test_report_text_rules(self):
+        # Standing rules for every string: no forbidden words, new heading, no old one.
+        texts = [step2_report(case) for case in step2_cases()]
+        texts += [render_for(*S1_MONEY, 3), render_for(*S1_MONEY, 3, "no"),
+                  render_for("0", "0", "0", 2, "yes")]
+        for text in texts:
+            lowered = text.lower()
+            for word in FORBIDDEN_WORDS:
+                self.assertNotIn(word, lowered)
+            self.assertNotIn("the amount for each child", lowered)
+            lines = lines_of(text)
+            self.assertEqual(lines[0], HEADING_NEW)
+            self.assertNotIn(HEADING_OLD, lines)
 
 
 if __name__ == "__main__":

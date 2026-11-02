@@ -2,6 +2,8 @@
 
 Date: 2026-10-19
 
+> **Superseded 2026-11-02** by `docs/decisions/2026-11-02-agents-md-is-the-only-instruction-file.md` (the one-line `CLAUDE.md` was removed; Claude Code reads `AGENTS.md` directly).
+
 ## The rule
 
 > **`AGENTS.md` is the only instruction file. `CLAUDE.md` holds exactly one

@@ -1,4 +1,5 @@
-"""Step 1 of the California guideline child-support formula (Family Code 4055).
+"""The California guideline child-support formula (Family Code 4055), with the
+FC 4055(b)(8) allocation per child.
 
 Net disposable income is an input here; Family Code 4059 deductions are not
 computed. All arithmetic is exact (fractions.Fraction); only the display
@@ -46,6 +47,8 @@ HOURS_PER_WEEK = 40
 WEEKS_PER_YEAR = 52
 MONTHS_PER_YEAR = 12
 
+SAME_TIME_SHARING_CHOICES = ("yes", "no")  # the optional input, plan reading R10
+
 MAX_DECIMALS = 2
 MAX_ABS_EXPONENT = 15  # amounts must stay below 10**16 so parsing stays cheap
 
@@ -82,6 +85,32 @@ class GuidelineResult:
     a_time_percent: Fraction
     children: int
     minimum_wage_hourly: Fraction
+    # Optional input (R10): do all the children share one time-sharing
+    # arrangement? None when it was not given.
+    same_time_sharing_arrangement: object = None
+
+
+@dataclasses.dataclass(frozen=True)
+class AllocationEnd:
+    """The FC 4055(b)(8) allocation for one end of the amount.
+
+    exact_cumulative: the exact amounts for 1, 2, ... n children (Fractions).
+    cumulative: the same amounts rounded half-up to whole cents (ints).
+    per_child: youngest first; the first child's cumulative amount, then the
+    differences between consecutive rounded cumulative amounts (reading R8).
+    """
+
+    exact_cumulative: tuple
+    cumulative: tuple
+    per_child: tuple
+
+
+@dataclasses.dataclass(frozen=True)
+class Allocation:
+    """top: no low-income reduction. bottom: the largest reduction (R7), or None."""
+
+    top: AllocationEnd
+    bottom: object = None
 
 
 def _parse_decimal(name, value, max_decimals=MAX_DECIMALS):
@@ -130,6 +159,14 @@ def _parse_children(name, value):
     return value
 
 
+def _parse_same_time_sharing(name, value):
+    if value is None:
+        return None
+    if not isinstance(value, str) or value not in SAME_TIME_SHARING_CHOICES:
+        raise ValueError("%s must be yes or no" % name)
+    return value
+
+
 def k_row_for(tn):
     """Return the 1-based K table row for TN (FC 4055(b)(3), reading R3)."""
     for index, (upper, _, _, _) in enumerate(K_ROWS, start=1):
@@ -157,13 +194,23 @@ def low_income_threshold(minimum_wage_hourly):
     )
 
 
-def compute(a_ndi, b_ndi, a_time_percent, children, minimum_wage_hourly):
-    """Run the step 1 guideline formula; inputs are decimal strings and an int."""
+def compute(
+    a_ndi,
+    b_ndi,
+    a_time_percent,
+    children,
+    minimum_wage_hourly,
+    same_time_sharing_arrangement=None,
+):
+    """Run the guideline formula; inputs are decimal strings, an int and, optionally, yes or no."""
     a_net = _parse_amount("a_ndi", a_ndi)
     b_net = _parse_amount("b_ndi", b_ndi)
     a_time = _parse_percent("a_time_percent", a_time_percent)
     count = _parse_children("children", children)
     wage = _parse_wage("minimum_wage_hourly", minimum_wage_hourly)
+    arrangement = _parse_same_time_sharing(
+        "same_time_sharing_arrangement", same_time_sharing_arrangement
+    )
 
     # FC 4055(b)(1)(E): TN is the total of both parents' NDI.
     tn = a_net + b_net
@@ -230,7 +277,53 @@ def compute(a_ndi, b_ndi, a_time_percent, children, minimum_wage_hourly):
         a_time_percent=a_time,
         children=count,
         minimum_wage_hourly=wage,
+        same_time_sharing_arrangement=arrangement,
     )
+
+
+def _cents(value):
+    """Round a non-negative exact Fraction to whole cents, half-up (reading R4)."""
+    return (200 * value.numerator + value.denominator) // (2 * value.denominator)
+
+
+def allocation(result):
+    """The FC 4055(b)(8) allocation per child, or None when none is shown.
+
+    It is shown only for two or more children, when the person said the
+    children share one time-sharing arrangement (yes), and when there is a
+    paying parent. The exact amount for k children is |CS| x the (b)(4)
+    multiplier for k (the (b)(1)-(b)(4) amounts); each is rounded to the cent
+    for display, and a child's amount is the difference between the displayed
+    amounts for consecutive child counts (reading R8). When the (b)(7)
+    adjustment applies, the bottom end uses each amount reduced by the largest
+    permitted reduction, the same fraction for every child count (reading R7).
+    """
+    if (
+        result.children < 2
+        or result.same_time_sharing_arrangement != "yes"
+        or result.payer == "none"
+    ):
+        return None
+    base = abs(result.cs_formula)
+    factors = [("top", Fraction(1))]
+    if result.lia.applies:
+        factors.append(("bottom", 1 - result.lia.max_reduction / result.support))
+    ends = {}
+    for name, factor in factors:
+        exact = tuple(
+            base * MULTIPLIERS[count] * factor for count in range(1, result.children + 1)
+        )
+        shown = tuple(_cents(value) for value in exact)
+        per_child = (shown[0],) + tuple(b - a for a, b in zip(shown, shown[1:]))
+        ends[name] = AllocationEnd(
+            exact_cumulative=exact, cumulative=shown, per_child=per_child
+        )
+    return Allocation(top=ends["top"], bottom=ends.get("bottom"))
+
+
+def cents_text(cents):
+    """Format whole cents as dollars and cents."""
+    return "%d.%02d" % divmod(cents, 100)
 
 
 def fixed(value, places):
