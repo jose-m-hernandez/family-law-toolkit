@@ -11,7 +11,7 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - README, AGENTS.md (the instructions your AI agent reads) and this changelog.
 - The AGPL-3.0 licence text.
 - Contributing and security policies, code owners and a pull request template.
-- Decision records in docs/decisions/: how the AI-agent instructions file is arranged, this changelog's format, and the barred-strings scan.
+- Decision records in `docs/decisions/`, covering the agent instruction file, the changelog format, and the barred-strings scan.
 - A CI scan that fails a push or pull request if any entry from a private list appears in its history or branch name. It never prints the match. See docs/decisions/2026-10-19-every-push-and-pull-request-runs-the-barred-strings-scan.md. An entry still matches when its words are separated by a line break or repeated spaces, or when an invisible character is inserted into it; author and committer emails are checked.
 - The scan can match a short entry as a whole word only, through an optional per-entry flag.
 - docs/barred-strings-scan.md: how the scan works and how to try it.
@@ -26,4 +26,4 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The one-line CLAUDE.md that pointed Claude Code at AGENTS.md is removed; Claude Code now reads AGENTS.md directly.
 - The support report names the state minimum wage (Lab. Code 1182.12), states what the low-income presumption is, and notes that the per-child allocation is not shown when there are two or more children.
 - AGENTS.md and the README now say that one command ships, step 1 of the child-support calculator, and that comparing drafts and assembling exhibit packets and binders do not exist yet.
-- The decision record that kept a one-line CLAUDE.md is superseded by a new one: AGENTS.md is the only instruction file, and the repository has no CLAUDE.md.
+- `AGENTS.md` is now the only instruction file, and the decision record that kept the bridge is superseded (`docs/decisions/2026-11-02-agents-md-is-the-only-instruction-file.md`).
