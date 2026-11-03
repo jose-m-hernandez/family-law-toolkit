@@ -640,9 +640,11 @@ class AllocationReportTests(unittest.TestCase):
                     self.assertEqual(sum(group["per_child"]), printed[end])
                     self.assertEqual(group["cumulative"][-1], printed[end])
 
-    def test_2_s5_exact_differences_alone_would_not_add_up(self):
-        # Guards R8: the displayed per-child amounts add up, so they are
-        # differences of displayed running totals, not rounded exact differences.
+    def test_2_s5_per_child_amounts_are_differences_of_shown_running_totals(self):
+        # Guards R8: the displayed per-child amounts add up to the shown figure,
+        # because they are differences of the displayed running totals. The other
+        # rounding order (each exact difference rounded alone) is checked by the
+        # next test.
         text = step2_report(next(c for c in step2_cases() if c["id"] == "S5"))
         group = end_groups(text)["top"]
         self.assertEqual(sum(group["per_child"]), printed_figures(text)["top"])
@@ -651,6 +653,33 @@ class AllocationReportTests(unittest.TestCase):
             [group["cumulative"][0]]
             + [b - a for a, b in zip(group["cumulative"], group["cumulative"][1:])],
         )
+
+    def test_2_s5_rounding_each_exact_difference_alone_misses_the_shown_total(self):
+        case = next(c for c in step2_cases() if c["id"] == "S5")
+        inputs = case["inputs"]
+        result = compute(
+            inputs["a_ndi"], inputs["b_ndi"], inputs["a_time_percent"],
+            inputs["children"], inputs["minimum_wage_hourly"],
+            same_time_sharing_arrangement=inputs["same_time_sharing_arrangement"],
+        )
+        exact = guideline.allocation(result).top.exact_cumulative
+        differences = [exact[0]] + [b - a for a, b in zip(exact, exact[1:])]
+        # Half-up to whole cents, written out here so the comparison does not
+        # depend on the calculator's own rounding helpers.
+        # floor(d * 100 + 1/2) written as floor((d * 200 + 1) / 2): Fraction floor division.
+        alone = [(d * 200 + 1) // 2 for d in differences]
+        # These values come from docs/derivations/guideline-step-2.md (the S5 check).
+        self.assertEqual(alone, [112921, 67753, 45168, 33876])
+        text = step2_report(case)
+        shown = printed_figures(text)["top"]
+        self.assertEqual(sum(alone), 259718)
+        self.assertEqual(shown, 259719)
+        self.assertNotEqual(sum(alone), shown)
+        per_child = end_groups(text)["top"]["per_child"]
+        self.assertNotEqual(alone, per_child)
+        self.assertEqual(len(alone), len(per_child))
+        self.assertEqual(alone[:-1], per_child[:-1])
+        self.assertNotEqual(alone[-1], per_child[-1])
 
     def test_3_one_child_prints_no_allocation(self):  # test 3
         for flag in (None, "yes", "no"):

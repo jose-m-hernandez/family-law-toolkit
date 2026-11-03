@@ -21,6 +21,7 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The child-support calculator, step 2: with two or more children and the new `--same-time-sharing-arrangement yes` flag (all children share one time-sharing arrangement), the report shows the FC 4055(b)(8) allocation per child. When the low-income adjustment applies, it shows the allocation at both ends of the range. The per-child amounts add up to the support amount, or to each end of the range.
 - `docs/sources/`: the text of FC 4055 that the calculator follows, with where it comes from and how to check it.
 - Python API: `compute()` takes a sixth, optional argument, `same_time_sharing_arrangement` ("yes", "no" or None, the default), and its result carries a field of the same name. A call with five arguments returns the same computed values as before, and the new field is None. The new function `allocation(result)` returns the per-child allocation, or None unless there are two or more children, the argument is "yes", and a parent pays.
+- A test that shows why case S5 is among the step-2 test cases: rounding each exact per-child amount to the cent on its own would add up to one cent less than the support amount shown, which is why the toolkit rounds the amount for each number of children before taking the differences.
 
 ### Changed
 
