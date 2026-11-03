@@ -321,6 +321,114 @@ class ReportTests(unittest.TestCase):
                 self.assertNotIn("_", lines[0][len(prefix):])
                 self.assertNotIn(value, lines[0][len(prefix):])
 
+    def test_cli_help_prints_help_and_exits_0(self):
+        outputs = []
+        for flag in ("--help", "-h"):
+            with self.subTest(flag=flag):
+                done = run_cli(flag)
+                self.assertEqual(done.returncode, 0, done.stderr)
+                self.assertEqual(done.stderr, "")
+                self.assertTrue(done.stdout)
+                lines = done.stdout.split("\n")
+                heading = "Guideline child support (California Family Code section 4055)"
+                self.assertEqual(
+                    lines[lines.index(heading) + 1],
+                    "Educational; not legal advice; not certified for court filing;"
+                    " consult counsel.",
+                )
+                outputs.append(done.stdout)
+        self.assertEqual(outputs[0], outputs[1])
+
+    def test_cli_help_wins_over_other_arguments(self):
+        plain = run_cli("--help").stdout
+        valid = list(cli_args(case_by_id("G1")))
+        placed = {
+            "before": ["--help"] + valid,
+            "among": valid[:4] + ["--help"] + valid[4:],
+            "after": valid + ["--help"],
+            "short with invalid value": ["-h", "--children", "two"],
+        }
+        for label, argv in placed.items():
+            with self.subTest(placement=label):
+                done = run_cli(*argv)
+                self.assertEqual(done.returncode, 0, done.stderr)
+                self.assertEqual(done.stdout, plain)
+                self.assertNotIn(IDENTITY_LINE, done.stdout)
+
+    def test_cli_help_names_every_parser_option(self):
+        text = run_cli("--help").stdout
+        for action in cli_main._build_parser()._actions:
+            for option in action.option_strings:
+                with self.subTest(option=option):
+                    self.assertIn(option, text)
+
+    def test_cli_help_carries_the_reviewed_strings(self):
+        text = " ".join(run_cli("--help").stdout.split())
+        expected = (
+            "Guideline child support (California Family Code section 4055)",
+            "Educational; not legal advice; not certified for court filing;"
+            " consult counsel.",
+            "Parent A net disposable income",
+            "Parent B net disposable income",
+            "Parent A's share of time",
+            "Number of children",
+            "Hourly state minimum wage used (Lab. Code 1182.12)",
+            "All children share one time-sharing arrangement",
+            report.NOTE_NDI,
+            NOTE_TIME_SHARE,
+            report.NOTE_PER_CHILD_NO_FLAG,
+            "It has an effect only with two or more children.",
+            "Net disposable income amounts are monthly dollars; the minimum wage"
+            " is per hour.",
+            "Parent A and Parent B are labels for the two parents. Use the same"
+            " labels for every input.",
+            "Write AMOUNT and PERCENT as plain numbers with at most two decimals,"
+            " such as 6919.09: no commas, no dollar sign. PERCENT is from 0 to"
+            " 100. COUNT is a whole number from 1 to 10.",
+            "Example, with invented numbers:",
+            "python3 -m family_law_toolkit.support --a-ndi 6919.09 --b-ndi 2255.71"
+            " --a-time-percent 35 --children 2 --minimum-wage-hourly 21.00",
+        )
+        for piece in expected:
+            with self.subTest(piece=piece[:40]):
+                self.assertIn(piece, text)
+
+    def test_cli_help_text_rules(self):
+        text = run_cli("--help").stdout
+        for word in FORBIDDEN_WORDS:
+            with self.subTest(word=word):
+                self.assertNotIn(word, text.lower())
+        long_lines = [line for line in text.split("\n") if len(line) > 79]
+        self.assertEqual(len(long_lines), 1, long_lines)
+        self.assertTrue(
+            long_lines[0].startswith("    python3 -m family_law_toolkit.support --a-ndi")
+        )
+
+    def test_cli_usage_errors_point_to_help(self):
+        tail = ". Run with --help to see what each flag means."
+        attempts = {
+            "no arguments": (),
+            "unknown flag": G1_ARGS + ("--quiet",),
+            "bad choice": G1_ARGS + (FLAG, "maybe"),
+        }
+        for label, argv in attempts.items():
+            with self.subTest(case=label):
+                done = run_cli(*argv)
+                self.assertEqual(done.returncode, 2, done.stderr)
+                self.assertEqual(done.stdout, "")
+                lines = done.stderr.splitlines()
+                self.assertEqual(len(lines), 1, done.stderr)
+                self.assertTrue(lines[0].endswith(tail), lines[0])
+
+    def test_cli_children_1_output_does_not_depend_on_the_arrangement_flag(self):
+        money_args = list(G1_ARGS)
+        money_args[money_args.index("--children") + 1] = "1"
+        without = run_cli(*money_args)
+        with_flag = run_cli(*money_args, FLAG, "yes")
+        self.assertEqual(without.returncode, 0, without.stderr)
+        self.assertEqual(with_flag.returncode, 0, with_flag.stderr)
+        self.assertEqual(without.stdout, with_flag.stdout)
+
     def test_report_has_no_forbidden_words(self):
         for case in load_cases():
             with self.subTest(case=case["id"]):

@@ -22,6 +22,7 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `docs/sources/`: the text of FC 4055 that the calculator follows, with where it comes from and how to check it.
 - Python API: `compute()` takes a sixth, optional argument, `same_time_sharing_arrangement` ("yes", "no" or None, the default), and its result carries a field of the same name. A call with five arguments returns the same computed values as before, and the new field is None. The new function `allocation(result)` returns the per-child allocation, or None unless there are two or more children, the argument is "yes", and a parent pays.
 - A test for case S5: rounding each exact per-child amount to the cent separately adds up to one cent less than the support amount shown, which is why the toolkit rounds the amount for each number of children before taking differences.
+- `python3 -m family_law_toolkit.support --help` (or `-h`) now prints what each flag means, with an example on invented numbers, and exits 0. A usage error now ends with a pointer to `--help`. The parser still has exactly six options.
 
 ### Changed
 
