@@ -7,6 +7,16 @@ from family_law_toolkit.support.guideline import compute
 from family_law_toolkit.support.report import render_report
 
 
+_FLAG_FOR_NAME = {
+    "a_ndi": "--a-ndi",
+    "b_ndi": "--b-ndi",
+    "a_time_percent": "--a-time-percent",
+    "children": "--children",
+    "minimum_wage_hourly": "--minimum-wage-hourly",
+    "same_time_sharing_arrangement": "--same-time-sharing-arrangement",
+}
+
+
 class _OneLineParser(argparse.ArgumentParser):
     """Report any usage problem as one line on stderr and exit 2."""
 
@@ -44,7 +54,9 @@ def main(argv=None):
             args.same_time_sharing_arrangement,
         )
     except ValueError as error:
-        sys.stderr.write("python3 -m family_law_toolkit.support: error: %s\n" % error)
+        name, space, rest = str(error).partition(" ")
+        message = _FLAG_FOR_NAME.get(name, name) + space + rest
+        sys.stderr.write("python3 -m family_law_toolkit.support: error: %s\n" % message)
         return 2
     sys.stdout.write(render_report(result) + "\n")
     return 0

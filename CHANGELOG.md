@@ -31,3 +31,4 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The support report names the state minimum wage (Lab. Code 1182.12), states what the low-income presumption is, and notes that the per-child allocation is not shown when there are two or more children.
 - AGENTS.md and the README now say that one command ships, step 1 of the child-support calculator, and that comparing drafts and assembling exhibit packets and binders do not exist yet.
 - `AGENTS.md` is now the only instruction file, and the decision record that kept the bridge is superseded (`docs/decisions/2026-11-02-agents-md-is-the-only-instruction-file.md`).
+- A bad value on the command line now produces an error that names the flag you typed (for example `--a-ndi`), not the Python parameter (`a_ndi`). `compute()` and its error messages are unchanged.

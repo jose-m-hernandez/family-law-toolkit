@@ -286,6 +286,41 @@ class ReportTests(unittest.TestCase):
         self.assertEqual(done.returncode, 2, done.stderr)
         self.assertEqual(len(done.stderr.strip().splitlines()), 1)
 
+    def test_cli_value_errors_name_the_flag_typed(self):
+        base = {
+            "--a-ndi": "6919.09",
+            "--b-ndi": "2255.71",
+            "--a-time-percent": "35",
+            "--children": "2",
+            "--minimum-wage-hourly": "21.00",
+        }
+        prefix = "python3 -m family_law_toolkit.support: error: "
+        cases = (
+            ("--a-ndi", "1,000", "is not a decimal number"),
+            ("--a-ndi", "NaN", "must be a finite number"),
+            ("--a-ndi", "4000.001", "has more than 2 decimals"),
+            ("--a-ndi", "1E+30", "is too large"),
+            ("--b-ndi", "-0.01", "must not be negative"),
+            ("--a-time-percent", "100.01", "must be between 0 and 100"),
+            ("--children", "11", "must be between 1 and 10"),
+            ("--minimum-wage-hourly", "0", "must be greater than zero"),
+        )
+        for flag, value, rest in cases:
+            with self.subTest(flag=flag, value=value):
+                values = dict(base)
+                values[flag] = value
+                argv = []
+                for name, text in values.items():
+                    argv.extend([name, text])
+                done = run_cli(*argv)
+                self.assertEqual(done.returncode, 2, done.stderr)
+                self.assertEqual(done.stdout, "")
+                lines = done.stderr.splitlines()
+                self.assertEqual(len(lines), 1, done.stderr)
+                self.assertEqual(lines[0], prefix + flag + " " + rest)
+                self.assertNotIn("_", lines[0][len(prefix):])
+                self.assertNotIn(value, lines[0][len(prefix):])
+
     def test_report_has_no_forbidden_words(self):
         for case in load_cases():
             with self.subTest(case=case["id"]):
