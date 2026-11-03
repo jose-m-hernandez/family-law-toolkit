@@ -11,6 +11,18 @@ child-support calculator. Nothing else is built yet.
 - What changes, and when: [CHANGELOG.md](CHANGELOG.md)
 - How changes are made: [CONTRIBUTING.md](CONTRIBUTING.md)
 
+## Running it
+
+Needs Python 3.9 or later and nothing else to install. CI runs the tests on 3.9 and on the latest 3.x.
+
+Run it from the repository root, the folder that contains `family_law_toolkit/`:
+
+    python3 -m family_law_toolkit.support --a-ndi 6919.09 --b-ndi 2255.71 --a-time-percent 35 --children 2 --minimum-wage-hourly 21.00
+
+The numbers are invented. It prints a text report to the terminal. Add `--help` to see what each flag means.
+
+You enter net disposable income yourself. This version does not work it out from deductions (FC 4059).
+
 ## Licence
 
 GNU Affero General Public License v3.0 or later; see [LICENSE](LICENSE).

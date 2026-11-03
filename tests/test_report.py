@@ -429,6 +429,29 @@ class ReportTests(unittest.TestCase):
         self.assertEqual(with_flag.returncode, 0, with_flag.stderr)
         self.assertEqual(without.stdout, with_flag.stdout)
 
+    def test_readme_example_command_runs(self):
+        lines = (ROOT / "README.md").read_text(encoding="utf-8").splitlines()
+        prefix = "python3 -m family_law_toolkit.support "
+        matches = [line for line in lines if line.lstrip().startswith(prefix)]
+        self.assertEqual(len(matches), 1)
+        tokens = matches[0].split()
+        self.assertEqual(tokens[:3], ["python3", "-m", "family_law_toolkit.support"])
+        result = run_cli(*tokens[3:])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stderr, "")
+        self.assertIn(
+            "Guideline child support (California Family Code section 4055)",
+            result.stdout,
+        )
+
+    def test_readme_python_version_matches_ci_minimum(self):
+        ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+        matches = [line for line in ci.splitlines() if "python-version: [" in line]
+        self.assertEqual(len(matches), 1)
+        version = matches[0].split('"')[1]
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("Needs Python " + version + " or later", readme)
+
     def test_report_has_no_forbidden_words(self):
         for case in load_cases():
             with self.subTest(case=case["id"]):
