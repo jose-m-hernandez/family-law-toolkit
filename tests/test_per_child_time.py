@@ -15,6 +15,7 @@ from family_law_toolkit.support import report
 from family_law_toolkit.support.guideline import allocation, compute
 from family_law_toolkit.support.report import (
     NOTE_PER_CHILD_DIFFERENT,
+    NOTE_PER_CHILD_DIFFERENT_SHARES,
     NOTE_PER_CHILD_NO_FLAG,
     render_report,
 )
@@ -25,6 +26,8 @@ P1 = ("6000.00", "2000.00")
 LIA = ("3000.00", "500.00")
 WAGE = "21.00"
 FLAG = "--same-time-sharing-arrangement"
+
+GC_DIFFERENT_SHARES = "This toolkit reads different percentages of time for different children as different time-sharing arrangements, so the per-child allocation (FC 4055(b)(8)) does not apply."
 
 S_READ = (
     "  This toolkit reads the average in FC 4055(b)(1)(D) as the high earner's "
@@ -104,7 +107,9 @@ class PerChildTimeTests(unittest.TestCase):
         self.assertFalse(
             [line for line in lines if line.startswith("  Parent A's share of time: ")]
         )
-        self.assertEqual(text.count(NOTE_PER_CHILD_DIFFERENT), 1)
+        self.assertEqual(text.count(NOTE_PER_CHILD_DIFFERENT_SHARES), 1)
+        self.assertNotIn(NOTE_PER_CHILD_DIFFERENT, text)
+        self.assertEqual(report.NOTE_PER_CHILD_DIFFERENT_SHARES, GC_DIFFERENT_SHARES)
 
     def test_averaging_a_then_taking_the_high_earner_equals_the_other_order(self):
         cases = (
@@ -151,7 +156,8 @@ class PerChildTimeTests(unittest.TestCase):
                 result = compute(*P1, ["30", "40"], 2, WAGE, flag)
                 self.assertIsNone(allocation(result))
                 text = render_report(result)
-                self.assertEqual(text.count(NOTE_PER_CHILD_DIFFERENT), 1)
+                self.assertEqual(text.count(NOTE_PER_CHILD_DIFFERENT_SHARES), 1)
+                self.assertNotIn(NOTE_PER_CHILD_DIFFERENT, text)
                 self.assertNotIn(NOTE_PER_CHILD_NO_FLAG, text)
                 self.assertNotIn("Allocation per child (FC 4055(b)(8))", text.split("\n"))
                 lines = text.split("\n")
@@ -219,6 +225,7 @@ class PerChildTimeTests(unittest.TestCase):
         self.assertEqual(allocation(listed), allocation(single))
         text = render_report(listed)
         self.assertNotIn(NOTE_PER_CHILD_DIFFERENT, text)
+        self.assertNotIn(NOTE_PER_CHILD_DIFFERENT_SHARES, text)
         self.assertIn(
             "  Parent A's share of time, by child: 35%, 35%, 35%", text.split("\n")
         )
@@ -227,6 +234,7 @@ class PerChildTimeTests(unittest.TestCase):
         omitted_text = render_report(omitted)
         self.assertEqual(omitted_text.count(NOTE_PER_CHILD_NO_FLAG), 1)
         self.assertNotIn(NOTE_PER_CHILD_DIFFERENT, omitted_text)
+        self.assertNotIn(NOTE_PER_CHILD_DIFFERENT_SHARES, omitted_text)
         # (c) the flag set on that result still allocates.
         self.assertIsNotNone(
             allocation(dataclasses.replace(omitted, same_time_sharing_arrangement="yes"))

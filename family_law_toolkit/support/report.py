@@ -33,6 +33,7 @@ NOTE_PER_CHILD_DIFFERENT = (
     "The per-child allocation (FC 4055(b)(8)) does not apply, because the "
     "children have different time-sharing arrangements."
 )
+NOTE_PER_CHILD_DIFFERENT_SHARES = "This toolkit reads different percentages of time for different children as different time-sharing arrangements, so the per-child allocation (FC 4055(b)(8)) does not apply."
 NOTE_PER_CHILD_NO_PAYER = (
     "Guideline support is 0.00, so there is no amount to allocate per child "
     "(FC 4055(b)(8))."
@@ -236,7 +237,7 @@ def render_report(result):
     body += ["", NOTE_NDI, NOTE_TIME_SHARE]
     if result.children >= 2:
         if differ:
-            body.append(NOTE_PER_CHILD_DIFFERENT)
+            body.append(NOTE_PER_CHILD_DIFFERENT_SHARES)
         elif arrangement is None:
             body.append(NOTE_PER_CHILD_NO_FLAG)
         elif arrangement == "no":
