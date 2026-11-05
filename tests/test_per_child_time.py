@@ -210,6 +210,28 @@ class PerChildTimeTests(unittest.TestCase):
                     normalise_list_report(render_report(listed)), render_report(single)
                 )
 
+    def test_equal_shares_written_differently_count_as_equal(self):
+        shares = ["35", "35.0", "35.00"]
+        # (a) flag yes: parsed values are equal, so no contradiction error.
+        listed = compute(*P1, shares, 3, WAGE, "yes")
+        single = compute(*P1, "35", 3, WAGE, "yes")
+        self.assertIsNotNone(allocation(listed))
+        self.assertEqual(allocation(listed), allocation(single))
+        text = render_report(listed)
+        self.assertNotIn(NOTE_PER_CHILD_DIFFERENT, text)
+        self.assertIn(
+            "  Parent A's share of time, by child: 35%, 35%, 35%", text.split("\n")
+        )
+        # (b) flag omitted: same as equal shares today.
+        omitted = compute(*P1, shares, 3, WAGE)
+        omitted_text = render_report(omitted)
+        self.assertEqual(omitted_text.count(NOTE_PER_CHILD_NO_FLAG), 1)
+        self.assertNotIn(NOTE_PER_CHILD_DIFFERENT, omitted_text)
+        # (c) the flag set on that result still allocates.
+        self.assertIsNotNone(
+            allocation(dataclasses.replace(omitted, same_time_sharing_arrangement="yes"))
+        )
+
     def test_single_share_path_is_unchanged(self):
         cases = []
         for name in ("guideline_step1.json", "guideline_step2.json"):
