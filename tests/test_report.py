@@ -286,6 +286,172 @@ class ReportTests(unittest.TestCase):
         self.assertEqual(done.returncode, 2, done.stderr)
         self.assertEqual(len(done.stderr.strip().splitlines()), 1)
 
+    def test_cli_value_errors_name_the_flag_typed(self):
+        base = {
+            "--a-ndi": "6919.09",
+            "--b-ndi": "2255.71",
+            "--a-time-percent": "35",
+            "--children": "2",
+            "--minimum-wage-hourly": "21.00",
+        }
+        prefix = "python3 -m family_law_toolkit.support: error: "
+        cases = (
+            ("--a-ndi", "1,000", "is not a decimal number"),
+            ("--a-ndi", "NaN", "must be a finite number"),
+            ("--a-ndi", "4000.001", "has more than 2 decimals"),
+            ("--a-ndi", "1E+30", "is too large"),
+            ("--b-ndi", "-0.01", "must not be negative"),
+            ("--a-time-percent", "100.01", "must be between 0 and 100"),
+            ("--children", "11", "must be between 1 and 10"),
+            ("--minimum-wage-hourly", "0", "must be greater than zero"),
+        )
+        for flag, value, rest in cases:
+            with self.subTest(flag=flag, value=value):
+                values = dict(base)
+                values[flag] = value
+                argv = []
+                for name, text in values.items():
+                    argv.extend([name, text])
+                done = run_cli(*argv)
+                self.assertEqual(done.returncode, 2, done.stderr)
+                self.assertEqual(done.stdout, "")
+                lines = done.stderr.splitlines()
+                self.assertEqual(len(lines), 1, done.stderr)
+                self.assertEqual(lines[0], prefix + flag + " " + rest)
+                self.assertNotIn("_", lines[0][len(prefix):])
+                self.assertNotIn(value, lines[0][len(prefix):])
+
+    def test_cli_help_prints_help_and_exits_0(self):
+        outputs = []
+        for flag in ("--help", "-h"):
+            with self.subTest(flag=flag):
+                done = run_cli(flag)
+                self.assertEqual(done.returncode, 0, done.stderr)
+                self.assertEqual(done.stderr, "")
+                self.assertTrue(done.stdout)
+                lines = done.stdout.split("\n")
+                heading = "Guideline child support (California Family Code section 4055)"
+                self.assertEqual(
+                    lines[lines.index(heading) + 1],
+                    "Educational; not legal advice; not certified for court filing;"
+                    " consult counsel.",
+                )
+                outputs.append(done.stdout)
+        self.assertEqual(outputs[0], outputs[1])
+
+    def test_cli_help_wins_over_other_arguments(self):
+        plain = run_cli("--help").stdout
+        valid = list(cli_args(case_by_id("G1")))
+        placed = {
+            "before": ["--help"] + valid,
+            "among": valid[:4] + ["--help"] + valid[4:],
+            "after": valid + ["--help"],
+            "short with invalid value": ["-h", "--children", "two"],
+        }
+        for label, argv in placed.items():
+            with self.subTest(placement=label):
+                done = run_cli(*argv)
+                self.assertEqual(done.returncode, 0, done.stderr)
+                self.assertEqual(done.stdout, plain)
+                self.assertNotIn(IDENTITY_LINE, done.stdout)
+
+    def test_cli_help_names_every_parser_option(self):
+        text = run_cli("--help").stdout
+        for action in cli_main._build_parser()._actions:
+            for option in action.option_strings:
+                with self.subTest(option=option):
+                    self.assertIn(option, text)
+
+    def test_cli_help_carries_the_reviewed_strings(self):
+        text = " ".join(run_cli("--help").stdout.split())
+        expected = (
+            "Guideline child support (California Family Code section 4055)",
+            "Educational; not legal advice; not certified for court filing;"
+            " consult counsel.",
+            "Parent A net disposable income",
+            "Parent B net disposable income",
+            "Parent A's share of time",
+            "Number of children",
+            "Hourly state minimum wage used (Lab. Code 1182.12)",
+            "All children share one time-sharing arrangement",
+            report.NOTE_NDI,
+            NOTE_TIME_SHARE,
+            report.NOTE_PER_CHILD_NO_FLAG,
+            "It has an effect only with two or more children.",
+            "Net disposable income amounts are monthly dollars; the minimum wage"
+            " is per hour.",
+            "Parent A and Parent B are labels for the two parents. Use the same"
+            " labels for every input.",
+            "Write AMOUNT and PERCENT as plain numbers with at most two decimals,"
+            " such as 6919.09: no commas, no dollar sign. PERCENT is from 0 to"
+            " 100. COUNT is a whole number from 1 to 10.",
+            "Example, with invented numbers:",
+            "python3 -m family_law_toolkit.support --a-ndi 6919.09 --b-ndi 2255.71"
+            " --a-time-percent 35 --children 2 --minimum-wage-hourly 21.00",
+        )
+        for piece in expected:
+            with self.subTest(piece=piece[:40]):
+                self.assertIn(piece, text)
+
+    def test_cli_help_text_rules(self):
+        text = run_cli("--help").stdout
+        for word in FORBIDDEN_WORDS:
+            with self.subTest(word=word):
+                self.assertNotIn(word, text.lower())
+        long_lines = [line for line in text.split("\n") if len(line) > 79]
+        self.assertEqual(len(long_lines), 1, long_lines)
+        self.assertTrue(
+            long_lines[0].startswith("    python3 -m family_law_toolkit.support --a-ndi")
+        )
+
+    def test_cli_usage_errors_point_to_help(self):
+        tail = ". Run with --help to see what each flag means."
+        attempts = {
+            "no arguments": (),
+            "unknown flag": G1_ARGS + ("--quiet",),
+            "bad choice": G1_ARGS + (FLAG, "maybe"),
+        }
+        for label, argv in attempts.items():
+            with self.subTest(case=label):
+                done = run_cli(*argv)
+                self.assertEqual(done.returncode, 2, done.stderr)
+                self.assertEqual(done.stdout, "")
+                lines = done.stderr.splitlines()
+                self.assertEqual(len(lines), 1, done.stderr)
+                self.assertTrue(lines[0].endswith(tail), lines[0])
+
+    def test_cli_children_1_output_does_not_depend_on_the_arrangement_flag(self):
+        money_args = list(G1_ARGS)
+        money_args[money_args.index("--children") + 1] = "1"
+        without = run_cli(*money_args)
+        with_flag = run_cli(*money_args, FLAG, "yes")
+        self.assertEqual(without.returncode, 0, without.stderr)
+        self.assertEqual(with_flag.returncode, 0, with_flag.stderr)
+        self.assertEqual(without.stdout, with_flag.stdout)
+
+    def test_readme_example_command_runs(self):
+        lines = (ROOT / "README.md").read_text(encoding="utf-8").splitlines()
+        prefix = "python3 -m family_law_toolkit.support "
+        matches = [line for line in lines if line.lstrip().startswith(prefix)]
+        self.assertEqual(len(matches), 1)
+        tokens = matches[0].split()
+        self.assertEqual(tokens[:3], ["python3", "-m", "family_law_toolkit.support"])
+        result = run_cli(*tokens[3:])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stderr, "")
+        self.assertIn(
+            "Guideline child support (California Family Code section 4055)",
+            result.stdout,
+        )
+
+    def test_readme_python_version_matches_ci_minimum(self):
+        ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+        matches = [line for line in ci.splitlines() if "python-version: [" in line]
+        self.assertEqual(len(matches), 1)
+        version = matches[0].split('"')[1]
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("Needs Python " + version + " or later", readme)
+
     def test_report_has_no_forbidden_words(self):
         for case in load_cases():
             with self.subTest(case=case["id"]):
@@ -640,9 +806,11 @@ class AllocationReportTests(unittest.TestCase):
                     self.assertEqual(sum(group["per_child"]), printed[end])
                     self.assertEqual(group["cumulative"][-1], printed[end])
 
-    def test_2_s5_exact_differences_alone_would_not_add_up(self):
-        # Guards R8: the displayed per-child amounts add up, so they are
-        # differences of displayed running totals, not rounded exact differences.
+    def test_2_s5_per_child_amounts_are_differences_of_shown_running_totals(self):
+        # Guards R8: the displayed per-child amounts add up to the shown figure,
+        # because they are differences of the displayed running totals. The other
+        # rounding order (each exact difference rounded alone) is checked by the
+        # next test.
         text = step2_report(next(c for c in step2_cases() if c["id"] == "S5"))
         group = end_groups(text)["top"]
         self.assertEqual(sum(group["per_child"]), printed_figures(text)["top"])
@@ -651,6 +819,33 @@ class AllocationReportTests(unittest.TestCase):
             [group["cumulative"][0]]
             + [b - a for a, b in zip(group["cumulative"], group["cumulative"][1:])],
         )
+
+    def test_2_s5_rounding_each_exact_difference_alone_misses_the_shown_total(self):
+        case = next(c for c in step2_cases() if c["id"] == "S5")
+        inputs = case["inputs"]
+        result = compute(
+            inputs["a_ndi"], inputs["b_ndi"], inputs["a_time_percent"],
+            inputs["children"], inputs["minimum_wage_hourly"],
+            same_time_sharing_arrangement=inputs["same_time_sharing_arrangement"],
+        )
+        exact = guideline.allocation(result).top.exact_cumulative
+        differences = [exact[0]] + [b - a for a, b in zip(exact, exact[1:])]
+        # Half-up to whole cents, written out here so the comparison does not
+        # depend on the calculator's own rounding helpers.
+        # floor(d * 100 + 1/2) written as floor((d * 200 + 1) / 2): Fraction floor division.
+        alone = [(d * 200 + 1) // 2 for d in differences]
+        # These values come from docs/derivations/guideline-step-2.md (the S5 check).
+        self.assertEqual(alone, [112921, 67753, 45168, 33876])
+        text = step2_report(case)
+        shown = printed_figures(text)["top"]
+        self.assertEqual(sum(alone), 259718)
+        self.assertEqual(shown, 259719)
+        self.assertNotEqual(sum(alone), shown)
+        per_child = end_groups(text)["top"]["per_child"]
+        self.assertNotEqual(alone, per_child)
+        self.assertEqual(len(alone), len(per_child))
+        self.assertEqual(alone[:-1], per_child[:-1])
+        self.assertNotEqual(alone[-1], per_child[-1])
 
     def test_3_one_child_prints_no_allocation(self):  # test 3
         for flag in (None, "yes", "no"):
