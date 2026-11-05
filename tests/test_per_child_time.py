@@ -151,8 +151,8 @@ class PerChildTimeTests(unittest.TestCase):
         support_prefix = "  Support amount (FC 4055(a), (b)(4)): "
         single_support = [l for l in single_text.split("\n") if l.startswith(support_prefix)]
         self.assertEqual(len(single_support), 1)
-        # Flag unset: the reading line. Flag "no": the user's own statement,
-        # so the old note (CTO ruling, fix round 4).
+        # Flag unset: the toolkit's own conclusion, so the reading line.
+        # Flag "no": it repeats what the user said, so the old note.
         expected_notes = {
             None: (NOTE_PER_CHILD_DIFFERENT_SHARES, NOTE_PER_CHILD_DIFFERENT),
             "no": (NOTE_PER_CHILD_DIFFERENT, NOTE_PER_CHILD_DIFFERENT_SHARES),
