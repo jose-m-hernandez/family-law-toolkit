@@ -23,6 +23,8 @@ The numbers are invented. It prints a text report to the terminal. Add `--help` 
 
 You enter net disposable income yourself. This version does not work it out from deductions (FC 4059).
 
+For help working out the figures for your own case, you can ask a lawyer, your court's self-help center, or its family law facilitator.
+
 ## Licence
 
 GNU Affero General Public License v3.0 or later; see [LICENSE](LICENSE).
