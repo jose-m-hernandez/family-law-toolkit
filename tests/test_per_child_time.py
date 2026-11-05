@@ -151,13 +151,19 @@ class PerChildTimeTests(unittest.TestCase):
         support_prefix = "  Support amount (FC 4055(a), (b)(4)): "
         single_support = [l for l in single_text.split("\n") if l.startswith(support_prefix)]
         self.assertEqual(len(single_support), 1)
-        for flag in (None, "no"):
+        # Flag unset: the reading line. Flag "no": the user's own statement,
+        # so the old note (CTO ruling, fix round 4).
+        expected_notes = {
+            None: (NOTE_PER_CHILD_DIFFERENT_SHARES, NOTE_PER_CHILD_DIFFERENT),
+            "no": (NOTE_PER_CHILD_DIFFERENT, NOTE_PER_CHILD_DIFFERENT_SHARES),
+        }
+        for flag, (present, absent) in expected_notes.items():
             with self.subTest(flag=flag):
                 result = compute(*P1, ["30", "40"], 2, WAGE, flag)
                 self.assertIsNone(allocation(result))
                 text = render_report(result)
-                self.assertEqual(text.count(NOTE_PER_CHILD_DIFFERENT_SHARES), 1)
-                self.assertNotIn(NOTE_PER_CHILD_DIFFERENT, text)
+                self.assertEqual(text.count(present), 1)
+                self.assertNotIn(absent, text)
                 self.assertNotIn(NOTE_PER_CHILD_NO_FLAG, text)
                 self.assertNotIn("Allocation per child (FC 4055(b)(8))", text.split("\n"))
                 lines = text.split("\n")
@@ -169,6 +175,20 @@ class PerChildTimeTests(unittest.TestCase):
         result = compute(*P1, ["30", "40"], 2, WAGE)
         forced = dataclasses.replace(result, same_time_sharing_arrangement="yes")
         self.assertIsNone(allocation(forced))
+
+    def test_different_shares_are_found_whichever_share_is_larger(self):
+        for shares in (["40", "30"], ["35", "35", "30"]):
+            with self.subTest(shares=shares):
+                count = len(shares)
+                with self.assertRaises(ValueError) as caught:
+                    compute(*P1, shares, count, WAGE, same_time_sharing_arrangement="yes")
+                self.assertEqual(str(caught.exception), S_CONTRA)
+                result = compute(*P1, shares, count, WAGE)
+                self.assertEqual(
+                    render_report(result).count(NOTE_PER_CHILD_DIFFERENT_SHARES), 1
+                )
+                forced = dataclasses.replace(result, same_time_sharing_arrangement="yes")
+                self.assertIsNone(allocation(forced))
 
     def test_different_shares_with_flag_yes_is_an_error_naming_both_inputs(self):
         with self.assertRaises(ValueError) as caught:

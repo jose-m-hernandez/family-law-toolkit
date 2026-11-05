@@ -236,12 +236,12 @@ def render_report(result):
         body += [""] + _allocation_lines(result, shown)
     body += ["", NOTE_NDI, NOTE_TIME_SHARE]
     if result.children >= 2:
-        if differ:
+        if arrangement == "no":
+            body.append(NOTE_PER_CHILD_DIFFERENT)
+        elif differ:
             body.append(NOTE_PER_CHILD_DIFFERENT_SHARES)
         elif arrangement is None:
             body.append(NOTE_PER_CHILD_NO_FLAG)
-        elif arrangement == "no":
-            body.append(NOTE_PER_CHILD_DIFFERENT)
         elif shown is None:
             body.append(NOTE_PER_CHILD_NO_PAYER)
     return "\f".join(paginate(body))
