@@ -162,6 +162,18 @@ def _parse_children(name, value):
     return value
 
 
+class _NamedValueError(ValueError):
+    """A ValueError whose message uses more than one parameter name.
+
+    names lists the words in the message that are parameter names, and each
+    must appear exactly once as a whole word.
+    """
+
+    def __init__(self, message, names):
+        ValueError.__init__(self, message)
+        self.names = tuple(names)
+
+
 def _parse_same_time_sharing(name, value):
     if value is None:
         return None
@@ -221,15 +233,17 @@ def compute(
 
     if by_child is not None:
         if len(by_child) != count:
-            raise ValueError(
+            raise _NamedValueError(
                 "a_time_percent needs one percentage per child: the number of "
-                "percentages differs from children"
+                "percentages differs from children",
+                ("a_time_percent", "children"),
             )
         if arrangement == "yes" and any(share != by_child[0] for share in by_child):
-            raise ValueError(
+            raise _NamedValueError(
                 "a_time_percent gives different percentages per child, and "
                 "same_time_sharing_arrangement is yes: the two inputs "
-                "contradict each other"
+                "contradict each other",
+                ("a_time_percent", "same_time_sharing_arrangement"),
             )
         # The exact mean of Parent A's shares, never rounded (reading R13).
         a_time = sum(by_child, Fraction(0)) / len(by_child)

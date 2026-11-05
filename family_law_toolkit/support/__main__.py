@@ -110,7 +110,15 @@ def main(argv=None):
             args.same_time_sharing_arrangement,
         )
     except ValueError as error:
-        message = " ".join(_FLAG_FOR_NAME.get(word, word) for word in str(error).split(" "))
+        # A plain ValueError names its parameter in the first word only. An error
+        # that names several declares them (error.names); only those words map.
+        names = getattr(error, "names", None)
+        words = str(error).split(" ")
+        if names is None:
+            words[0] = _FLAG_FOR_NAME.get(words[0], words[0])
+        else:
+            words = [_FLAG_FOR_NAME[w] if w in names else w for w in words]
+        message = " ".join(words)
         sys.stderr.write("python3 -m family_law_toolkit.support: error: %s\n" % message)
         return 2
     sys.stdout.write(render_report(result) + "\n")
