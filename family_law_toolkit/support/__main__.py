@@ -56,6 +56,8 @@ You enter the share of time yourself. The default-proceeding rule (FC
 The per-child allocation (FC 4055(b)(8)) is shown only if you add
 --same-time-sharing-arrangement yes. It does not apply when the children have
 different time-sharing arrangements.
+For help working out the figures for your own case, you can ask a lawyer, your
+court's self-help center, or its family law facilitator.
 
 Example, with invented numbers:
     python3 -m family_law_toolkit.support --a-ndi 6919.09 --b-ndi 2255.71 --a-time-percent 35 --children 2 --minimum-wage-hourly 21.00"""
