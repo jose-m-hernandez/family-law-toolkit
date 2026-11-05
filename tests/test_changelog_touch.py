@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Jose Miguel Hernandez
 """Tests for ci/changelog_touch.py, each against a throwaway git repository."""
 
 import os

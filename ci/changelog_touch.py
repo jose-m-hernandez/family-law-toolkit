@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Jose Miguel Hernandez
 """Fail a pull request that adds no entry under "## [Unreleased]" in CHANGELOG.md.
 
 Usage: python3 ci/changelog_touch.py --base <rev> [--head <rev>]

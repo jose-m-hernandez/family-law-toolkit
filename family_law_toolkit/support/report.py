@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Jose Miguel Hernandez
 """Plain-text report for the guideline result.
 
 Every page starts with the identity line. There is one way to produce report
