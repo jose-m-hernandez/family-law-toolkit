@@ -21,6 +21,9 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The child-support calculator, step 2: with two or more children and the new `--same-time-sharing-arrangement yes` flag (all children share one time-sharing arrangement), the report shows the FC 4055(b)(8) allocation per child. When the low-income adjustment applies, it shows the allocation at both ends of the range. The per-child amounts add up to the support amount, or to each end of the range.
 - `docs/sources/`: the text of FC 4055 that the calculator follows, with where it comes from and how to check it.
 - Python API: `compute()` takes a sixth, optional argument, `same_time_sharing_arrangement` ("yes", "no" or None, the default), and its result carries a field of the same name. A call with five arguments returns the same computed values as before, and the new field is None. The new function `allocation(result)` returns the per-child allocation, or None unless there are two or more children, the argument is "yes", and a parent pays.
+- A test for case S5: rounding each exact per-child amount to the cent separately adds up to one cent less than the support amount shown, which is why the toolkit rounds the amount for each number of children before taking differences.
+- `python3 -m family_law_toolkit.support --help` (or `-h`) now prints what each flag means, with an example on invented numbers, and exits 0. A usage error now ends with a pointer to `--help`. The parser still has exactly six options.
+- README: how to run the calculator, from the repository root, with an example command on invented numbers and the Python version it needs (3.9 or later).
 
 ### Changed
 
@@ -30,3 +33,4 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The support report names the state minimum wage (Lab. Code 1182.12), states what the low-income presumption is, and notes that the per-child allocation is not shown when there are two or more children.
 - AGENTS.md and the README now say that one command ships, step 1 of the child-support calculator, and that comparing drafts and assembling exhibit packets and binders do not exist yet.
 - `AGENTS.md` is now the only instruction file, and the decision record that kept the bridge is superseded (`docs/decisions/2026-11-02-agents-md-is-the-only-instruction-file.md`).
+- A bad value on the command line now produces an error that names the flag you typed (for example `--a-ndi`), not the Python parameter (`a_ndi`). `compute()` and its error messages are unchanged.
