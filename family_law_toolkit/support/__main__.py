@@ -32,6 +32,7 @@ Required:
       Parent B net disposable income
   --a-time-percent PERCENT
       Parent A's share of time
+      Repeat the flag once per child to enter a share for each child.
   --children COUNT
       Number of children
   --minimum-wage-hourly AMOUNT
@@ -79,7 +80,7 @@ def _build_parser():
     )
     parser.add_argument("--a-ndi", required=True)
     parser.add_argument("--b-ndi", required=True)
-    parser.add_argument("--a-time-percent", required=True)
+    parser.add_argument("--a-time-percent", required=True, action="append")
     parser.add_argument("--children", required=True, type=int)
     parser.add_argument("--minimum-wage-hourly", required=True)
     parser.add_argument(
@@ -94,18 +95,20 @@ def main(argv=None):
         sys.stdout.write(_HELP_TEXT + "\n")
         return 0
     args = _build_parser().parse_args(argv)
+    # One value is a single share of time; repeating the flag gives one per child.
+    shares = args.a_time_percent
+    a_time_percent = shares[0] if len(shares) == 1 else shares
     try:
         result = compute(
             args.a_ndi,
             args.b_ndi,
-            args.a_time_percent,
+            a_time_percent,
             args.children,
             args.minimum_wage_hourly,
             args.same_time_sharing_arrangement,
         )
     except ValueError as error:
-        name, space, rest = str(error).partition(" ")
-        message = _FLAG_FOR_NAME.get(name, name) + space + rest
+        message = " ".join(_FLAG_FOR_NAME.get(word, word) for word in str(error).split(" "))
         sys.stderr.write("python3 -m family_law_toolkit.support: error: %s\n" % message)
         return 2
     sys.stdout.write(render_report(result) + "\n")

@@ -78,6 +78,12 @@ READING_R2_LINE = (
     "  This toolkit reads the monthly threshold as the hourly minimum wage "
     "x 40 x 52 / 12 (FC 4055(b)(7))."
 )
+READING_AVERAGE_LINE = (
+    "  This toolkit reads the average in FC 4055(b)(1)(D) as the high earner's "
+    "percentages of time with each child, added up and divided by the number "
+    "of children. The formula uses the exact average; H% above is shown "
+    "rounded to two decimals."
+)
 NO_SINGLE_FIGURE_LINE = (
     "  The presumption is rebuttable and no single figure in the range is chosen."
 )
@@ -181,6 +187,14 @@ def render_report(result):
     arrangement = result.same_time_sharing_arrangement
     echo = result.children >= 2 and arrangement is not None
     shown = allocation(result)
+    by_child = result.a_time_percent_by_child
+    if by_child is None:
+        share_line = "  Parent A's share of time: %s%%" % plain(result.a_time_percent, 2)
+    else:
+        share_line = "  Parent A's share of time, by child: " + ", ".join(
+            plain(share, 2) + "%" for share in by_child
+        )
+    differ = by_child is not None and any(share != by_child[0] for share in by_child)
     body = [
         "Guideline child support (California Family Code section 4055)",
         "Amounts are monthly dollars, rounded to the nearest cent (halves round up).",
@@ -188,7 +202,7 @@ def render_report(result):
         "Inputs as given",
         "  Parent A net disposable income: %s" % money(result.a_ndi),
         "  Parent B net disposable income: %s" % money(result.b_ndi),
-        "  Parent A's share of time: %s%%" % plain(result.a_time_percent, 2),
+        share_line,
         "  Number of children: %d" % result.children,
         "  Hourly state minimum wage used (Lab. Code 1182.12): %s" % money(result.minimum_wage_hourly),
     ]
@@ -201,6 +215,10 @@ def render_report(result):
         "  High earner (FC 4055(b)(1)(C)): %s" % _parent(result.high_earner),
         "  High earner's share of time, H%% (FC 4055(b)(1)(D)): %s%%"
         % plain(result.h_percent, 2),
+    ]
+    if by_child is not None:
+        body.append(READING_AVERAGE_LINE)
+    body += [
         "  K table row (FC 4055(b)(3)): %d" % result.k_row,
         "  K (FC 4055(b)(3)): %s" % fixed(result.k, 6),
         "  HN, the high earner's net disposable income: %s" % money(hn),
@@ -217,7 +235,9 @@ def render_report(result):
         body += [""] + _allocation_lines(result, shown)
     body += ["", NOTE_NDI, NOTE_TIME_SHARE]
     if result.children >= 2:
-        if arrangement is None:
+        if differ:
+            body.append(NOTE_PER_CHILD_DIFFERENT)
+        elif arrangement is None:
             body.append(NOTE_PER_CHILD_NO_FLAG)
         elif arrangement == "no":
             body.append(NOTE_PER_CHILD_DIFFERENT)
