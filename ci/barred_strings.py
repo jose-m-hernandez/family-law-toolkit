@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Jose Miguel Hernandez
 """Barred-strings scan.
 
 Reads a private list of strings (one per line) and fails if any of them

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Jose Miguel Hernandez
 """Command line: python3 -m family_law_toolkit.support --a-ndi ... (five flags required, one optional)."""
 
 import argparse

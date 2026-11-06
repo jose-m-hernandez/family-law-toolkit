@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Jose Miguel Hernandez
 """Tests for the step 1 guideline computation (Family Code 4055)."""
 
 import ast

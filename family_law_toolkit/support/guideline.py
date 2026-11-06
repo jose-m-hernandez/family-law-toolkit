@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Jose Miguel Hernandez
 """The California guideline child-support formula (Family Code 4055), with the
 FC 4055(b)(8) allocation per child.
 

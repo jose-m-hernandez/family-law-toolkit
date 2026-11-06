@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Jose Miguel Hernandez
 """Tests for one share of time per child (FC 4055(b)(1)(D)); invented numbers only.
 
 Expected values are literal Fractions worked out by hand, never recomputed

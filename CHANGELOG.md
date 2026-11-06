@@ -27,6 +27,7 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The child-support calculator takes one share of time per child: repeat `--a-time-percent` once per child (for example `--a-time-percent 30 --a-time-percent 40 --children 2`). H% is then the average of the high earner's shares (FC 4055(b)(1)(D)), used exactly in the formula and shown to two decimals. If the shares differ, no per-child allocation is shown, and adding `--same-time-sharing-arrangement yes` is an error. Giving `--a-time-percent` once works as before.
 - Python API: `compute()` also accepts `a_time_percent` as a list or tuple of decimal strings, one per child, and its result carries `a_time_percent_by_child` (None when one value is given). A call made the old way returns the same computed values as before.
 - README and `--help`: one sentence on where to ask for help working out the figures for your own case.
+- Each Python source file states its licence (SPDX AGPL-3.0-or-later) and copyright holder, and the README names the holder.
 
 ### Changed
 
