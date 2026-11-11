@@ -28,6 +28,7 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Python API: `compute()` also accepts `a_time_percent` as a list or tuple of decimal strings, one per child, and its result carries `a_time_percent_by_child` (None when one value is given). A call made the old way returns the same computed values as before.
 - README and `--help`: one sentence on where to ask for help working out the figures for your own case.
 - Each Python source file states its licence (SPDX AGPL-3.0-or-later) and copyright holder, and the README names the holder.
+- A command that compares two files' text: `python3 -m family_law_toolkit.compare --old FILE --new FILE`. It reads two UTF-8 plain-text or Markdown files and prints a plain-text report of the differences in their text, by paragraph and then by word, so you can read each difference for yourself. Differences in spacing, line ends, the byte-order mark, and hidden or look-alike characters are listed separately. The report names each file's path, byte size and sha256. The exit status is 0 when the files are identical byte for byte, 1 when they differ, and 2 when the comparison could not run. It does not say whether any difference matters. The spec it follows is `docs/specs/compare-drafts.md`.
 
 ### Changed
 
@@ -39,3 +40,4 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `AGENTS.md` is now the only instruction file, and the decision record that kept the bridge is superseded (`docs/decisions/2026-11-02-agents-md-is-the-only-instruction-file.md`).
 - A bad value on the command line now produces an error that names the flag you typed (for example `--a-ndi`), not the Python parameter (`a_ndi`). `compute()` and its error messages are unchanged.
 - Giving `--a-time-percent` more than once no longer keeps only the last value: each value is one child's share.
+- AGENTS.md and the README now say that two commands ship, the child-support calculator and the comparison of two files' text, and that assembling exhibit packets and binders does not exist yet.
