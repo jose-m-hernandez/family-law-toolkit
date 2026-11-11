@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Jose Miguel Hernandez
 """The California guideline child-support formula (Family Code 4055), with the
 FC 4055(b)(8) allocation per child.
 
@@ -88,6 +90,9 @@ class GuidelineResult:
     # Optional input (R10): do all the children share one time-sharing
     # arrangement? None when it was not given.
     same_time_sharing_arrangement: object = None
+    # One share of time per child, as parsed, when a list was given (R12, R13);
+    # None when a single value was given.
+    a_time_percent_by_child: object = None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -159,6 +164,18 @@ def _parse_children(name, value):
     return value
 
 
+class _NamedValueError(ValueError):
+    """A ValueError whose message uses more than one parameter name.
+
+    names lists the words in the message that are parameter names, and each
+    must appear exactly once as a whole word.
+    """
+
+    def __init__(self, message, names):
+        ValueError.__init__(self, message)
+        self.names = tuple(names)
+
+
 def _parse_same_time_sharing(name, value):
     if value is None:
         return None
@@ -205,12 +222,33 @@ def compute(
     """Run the guideline formula; inputs are decimal strings, an int and, optionally, yes or no."""
     a_net = _parse_amount("a_ndi", a_ndi)
     b_net = _parse_amount("b_ndi", b_ndi)
-    a_time = _parse_percent("a_time_percent", a_time_percent)
+    if isinstance(a_time_percent, (list, tuple)):
+        by_child = tuple(_parse_percent("a_time_percent", item) for item in a_time_percent)
+    else:
+        by_child = None
+        a_time = _parse_percent("a_time_percent", a_time_percent)
     count = _parse_children("children", children)
     wage = _parse_wage("minimum_wage_hourly", minimum_wage_hourly)
     arrangement = _parse_same_time_sharing(
         "same_time_sharing_arrangement", same_time_sharing_arrangement
     )
+
+    if by_child is not None:
+        if len(by_child) != count:
+            raise _NamedValueError(
+                "a_time_percent needs one percentage per child: the number of "
+                "percentages differs from children",
+                ("a_time_percent", "children"),
+            )
+        if arrangement == "yes" and any(share != by_child[0] for share in by_child):
+            raise _NamedValueError(
+                "a_time_percent gives different percentages per child, and "
+                "same_time_sharing_arrangement is yes: the two inputs "
+                "contradict each other",
+                ("a_time_percent", "same_time_sharing_arrangement"),
+            )
+        # The exact mean of Parent A's shares, never rounded (reading R13).
+        a_time = sum(by_child, Fraction(0)) / len(by_child)
 
     # FC 4055(b)(1)(E): TN is the total of both parents' NDI.
     tn = a_net + b_net
@@ -219,7 +257,9 @@ def compute(
     low_earner = "B" if high_earner == "A" else "A"
     hn = a_net if high_earner == "A" else b_net
     # FC 4055(b)(1)(D): H% is the high earner's share of time (kept as a
-    # percent; one time-share applies to all children).
+    # percent). With one share of time for all children it is that share; with
+    # one share per child it is the exact mean of the high earner's per-child
+    # shares, which is the mean of A's shares or 100 minus it (readings R12, R13).
     h_percent = a_time if high_earner == "A" else 100 - a_time
     h_fraction = h_percent / 100
 
@@ -278,6 +318,7 @@ def compute(
         children=count,
         minimum_wage_hourly=wage,
         same_time_sharing_arrangement=arrangement,
+        a_time_percent_by_child=by_child,
     )
 
 
@@ -297,12 +338,17 @@ def allocation(result):
     amounts for consecutive child counts (reading R8). When the (b)(7)
     adjustment applies, the bottom end uses each amount reduced by the largest
     permitted reduction, the same fraction for every child count (reading R7).
+    It is also not shown when one share of time was entered per child and the
+    shares differ, because those children do not share one arrangement (reading R12).
     """
     if (
         result.children < 2
         or result.same_time_sharing_arrangement != "yes"
         or result.payer == "none"
     ):
+        return None
+    shares = result.a_time_percent_by_child
+    if shares is not None and any(share != shares[0] for share in shares):
         return None
     base = abs(result.cs_formula)
     factors = [("top", Fraction(1))]

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Jose Miguel Hernandez
 """Unit tests for ci/barred_strings.py. All strings here are invented."""
 
 import ast

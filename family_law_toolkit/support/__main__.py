@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Jose Miguel Hernandez
 """Command line: python3 -m family_law_toolkit.support --a-ndi ... (five flags required, one optional)."""
 
 import argparse
@@ -32,6 +34,7 @@ Required:
       Parent B net disposable income
   --a-time-percent PERCENT
       Parent A's share of time
+      Repeat the flag once per child to enter a share for each child.
   --children COUNT
       Number of children
   --minimum-wage-hourly AMOUNT
@@ -55,6 +58,8 @@ You enter the share of time yourself. The default-proceeding rule (FC
 The per-child allocation (FC 4055(b)(8)) is shown only if you add
 --same-time-sharing-arrangement yes. It does not apply when the children have
 different time-sharing arrangements.
+For help working out the figures for your own case, you can ask a lawyer, your
+court's self-help center, or its family law facilitator.
 
 Example, with invented numbers:
     python3 -m family_law_toolkit.support --a-ndi 6919.09 --b-ndi 2255.71 --a-time-percent 35 --children 2 --minimum-wage-hourly 21.00"""
@@ -79,7 +84,7 @@ def _build_parser():
     )
     parser.add_argument("--a-ndi", required=True)
     parser.add_argument("--b-ndi", required=True)
-    parser.add_argument("--a-time-percent", required=True)
+    parser.add_argument("--a-time-percent", required=True, action="append")
     parser.add_argument("--children", required=True, type=int)
     parser.add_argument("--minimum-wage-hourly", required=True)
     parser.add_argument(
@@ -94,18 +99,28 @@ def main(argv=None):
         sys.stdout.write(_HELP_TEXT + "\n")
         return 0
     args = _build_parser().parse_args(argv)
+    # One value is a single share of time; repeating the flag gives one per child.
+    shares = args.a_time_percent
+    a_time_percent = shares[0] if len(shares) == 1 else shares
     try:
         result = compute(
             args.a_ndi,
             args.b_ndi,
-            args.a_time_percent,
+            a_time_percent,
             args.children,
             args.minimum_wage_hourly,
             args.same_time_sharing_arrangement,
         )
     except ValueError as error:
-        name, space, rest = str(error).partition(" ")
-        message = _FLAG_FOR_NAME.get(name, name) + space + rest
+        # A plain ValueError names its parameter in the first word only. An error
+        # that names several declares them (error.names); only those words map.
+        names = getattr(error, "names", None)
+        words = str(error).split(" ")
+        if names is None:
+            words[0] = _FLAG_FOR_NAME.get(words[0], words[0])
+        else:
+            words = [_FLAG_FOR_NAME[w] if w in names else w for w in words]
+        message = " ".join(words)
         sys.stderr.write("python3 -m family_law_toolkit.support: error: %s\n" % message)
         return 2
     sys.stdout.write(render_report(result) + "\n")
