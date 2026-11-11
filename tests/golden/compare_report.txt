@@ -44,8 +44,8 @@ Differences
        b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b
        b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b
      Detail not shown: this tool's matching limit was reached. The files
-       differ in this paragraph; words, figures and dates that differ inside
-       it are not listed.
+       differ in the paragraphs this entry names; words, figures and dates
+       that differ inside them are not listed.
   2. Hidden or look-alike characters: old file paragraph 3, file lines 5-6; new file paragraph 3, file lines 5-6
      - old "agreement", new "agree<U+200B>ment"
   3. Spacing in the paragraph: old file paragraph 4, file line 8; new file paragraph 4, file line 8

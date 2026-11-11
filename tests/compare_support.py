@@ -85,6 +85,13 @@ def t34_pair():
     return old, new
 
 
+def t35_pair(pieces=501):
+    """One one-line paragraph of `pieces` pieces: a, copies of w, z; the second file has U+200B
+    after the first and the last piece, so only the pieces differ (T35)."""
+    middle = " w" * (pieces - 2)
+    return "a" + middle + " z\n", "a" + ZWSP + middle + " z" + ZWSP + "\n"
+
+
 T29 = ("Parent A will pay the sum of $1,200.00 each month.", "Parent A will pay the sum of $1,250.00 each month.")
 T30 = ("The payment is due on March 3 of each year.", "The payment is due on March 8 of each year.")
 T31 = ("Parent B shall pay the school fees.", "Parent B shall not pay the school fees.")
@@ -158,7 +165,14 @@ FIXTURES = {
     "T32": token_pair(*T32, at_start=True),
     "T32-extras": token_pair(*T32, at_start=True, extras=True),
     "T34": t34_pair(),
+    "T35": t35_pair(),
 }
+
+# The two fixed detail lines, written from the spec's 4.4 (Q-C13); T24 also reads the spec.
+LINE_A = ("Detail not shown: this tool's matching limit was reached. The files differ in the "
+          "paragraphs this entry names; words, figures and dates that differ inside them are not listed.")
+LINE_B = ("Detail not shown: this tool's matching limit was reached. The files differ in the "
+          "paragraphs this entry names; hidden or look-alike characters that differ inside them are not listed.")
 
 # Texts the T20 edits start from; "a" is there so that some edits leave a refused file.
 T20_BASES = (
@@ -184,6 +198,12 @@ def spec_help():
 def spec_identity_line():
     line = re.search(r"identity line `(family-law-toolkit v<version>[^`]*)`", spec_text()).group(1)
     return line.replace("<version>", __version__)
+
+
+def spec_detail_lines():
+    """Line A and Line B as 4.4 gives them."""
+    found = re.findall(r"^  - Line ([AB]), for [^:]*: `(.*)`$", spec_text(), re.M)
+    return {name: text for name, text in found}
 
 
 def spec_listed_phrases():

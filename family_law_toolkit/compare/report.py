@@ -10,7 +10,7 @@ import textwrap
 import unicodedata
 
 from family_law_toolkit import TOOLKIT_NAME, __version__
-from family_law_toolkit.compare.differences import DETAIL_LINE, describe_line_ends
+from family_law_toolkit.compare.differences import DETAIL_LINE, DETAIL_LINE_HIDDEN, describe_line_ends
 
 IDENTITY_LINE = TOOLKIT_NAME + " v" + __version__ + " — not certified for court filing"
 EDUCATIONAL_LINE = "Educational; not legal advice; not certified for court filing; consult counsel."
@@ -159,7 +159,7 @@ def _entry_lines(number, entry):
             lines += _word_line(diff)
     elif entry.kind == "hidden":
         if entry.runs is None:
-            return lines + _wrap("     " + DETAIL_LINE)
+            return lines + _wrap("     " + DETAIL_LINE_HIDDEN)
         for old, new in entry.runs:
             lines += _run_line(old, new)
     return lines

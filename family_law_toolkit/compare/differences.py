@@ -16,10 +16,18 @@ MAX_BYTES = 200000
 MATCH_LIMIT = 250000  # one matching, after the shared start and end are set aside (4.4)
 SHARED_LIMIT = 500000  # every word or piece matching together, in entry order (4.4)
 BOM = b"\xef\xbb\xbf"
+# The two fixed detail lines of spec 4.4 (Q-C13): Line A for a Differs entry, Line B for a
+# Hidden or look-alike characters entry past the matching limit.
 DETAIL_LINE = (
     "Detail not shown: this tool's matching limit was reached. The files differ in "
-    "this paragraph; words, figures and dates that differ inside it are not listed."
-)  # pending Q-C13: kept as worded in both places it appears
+    "the paragraphs this entry names; words, figures and dates that differ inside "
+    "them are not listed."
+)
+DETAIL_LINE_HIDDEN = (
+    "Detail not shown: this tool's matching limit was reached. The files differ in "
+    "the paragraphs this entry names; hidden or look-alike characters that differ "
+    "inside them are not listed."
+)
 
 Word = namedtuple("Word", "word line piece")  # a paragraph-break token has word None
 Diff = namedtuple("Diff", "old new context")  # one word difference: Words, Words, pieces

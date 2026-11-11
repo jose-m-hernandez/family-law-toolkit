@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 Jose Miguel Hernandez
 """Section 4 of the compare spec: what counts as a difference, row by row (T2 to T18,
-T20, T28's matching caps, T29 to T32, T34). Each expectation is written from the spec."""
+T20, T28's matching caps, T29 to T32, T34, T35). Each expectation is written from the spec."""
 
 import random
 import string
@@ -10,8 +10,8 @@ import unittest
 
 from family_law_toolkit.compare import differences
 from tests.compare_support import (
-    BILL, CURLY, CYRILLIC_A, FIXTURES, PA, PB, PC, RENT, T20_BASES, ZWSP,
-    as_bytes, difference_lines, paragraphs, words_line,
+    BILL, CURLY, CYRILLIC_A, FIXTURES, LINE_A, LINE_B, PA, PB, PC, RENT, T20_BASES, ZWSP,
+    as_bytes, difference_lines, paragraphs, render, t35_pair, words_line,
 )
 
 OLD_NEW_1 = "old file paragraph 1, file line 1; new file paragraph 1, file line 1"
@@ -284,11 +284,31 @@ class DifferenceTests(unittest.TestCase):
             heads[2],
             "     old: Parent A will pay $1,200.00 each month.",
             "     new: Parent A will pay $1,250.00 each month.",
-            "     " + differences.DETAIL_LINE,
+            "     " + LINE_A,
         ])
         self.assertFalse([l for l in lines if "no difference" in l.lower()])
         # the first two ran: each lists its word differences
         self.assertEqual(len([l for l in lines if l.startswith("     - ")]), 2)
+
+    def test_t35_matching_limit_hidden_characters(self):
+        old, new = FIXTURES["T35"]
+        self.assertEqual(kinds_of(old, new), ["hidden"])
+        lines = difference_lines(old, new)
+        self.assertEqual(lines, [
+            "  1. Hidden or look-alike characters: old file paragraph 1, file line 1; "
+            "new file paragraph 1, file line 1",
+            "     " + LINE_B,
+        ])
+        text = render(old, new)
+        self.assertIn("hidden or look-alike characters 1, file 0.", text)
+        self.assertIn("Differs 0, only in old 0, only in new 0, spacing 0, ", text)
+        self.assertNotIn("words, figures and dates", text)
+        self.assertNotIn("no difference", text.lower())
+        # one piece fewer on each side: 500 x 500 = 250,000 runs, and lists its two runs
+        old, new = t35_pair(500)
+        lines = difference_lines(old, new)
+        self.assertEqual(lines[1:], ['     - old "a", new "a<U+200B>"', '     - old "z", new "z<U+200B>"'])
+        self.assertNotIn("Detail not shown", "\n".join(lines))
 
 
 if __name__ == "__main__":

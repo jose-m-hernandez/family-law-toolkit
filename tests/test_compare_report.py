@@ -11,9 +11,9 @@ from unittest import mock
 
 from family_law_toolkit.compare import differences, report
 from tests.compare_support import (
-    FIXTURES, GOLDEN_NEW, GOLDEN_OLD, GOLDEN_PATHS, PA, PB, ROOT, T20_BASES, Workdir,
+    FIXTURES, GOLDEN_NEW, LINE_A, LINE_B, GOLDEN_OLD, GOLDEN_PATHS, PA, PB, ROOT, T20_BASES, Workdir,
     as_bytes, difference_lines, page_free_lines, render, run_main, spec_help,
-    spec_identity_line, spec_listed_phrases, spec_notes,
+    spec_detail_lines, spec_identity_line, spec_listed_phrases, spec_notes,
 )
 
 EDUCATIONAL = "Educational; not legal advice; not certified for court filing; consult counsel."
@@ -110,6 +110,14 @@ class ReportTests(unittest.TestCase):
     def test_t24_never_say(self):
         phrases = spec_listed_phrases()
         self.assertIn("significant", phrases)
+        # the two detail lines: byte for byte against the spec's 4.4, and not the old line
+        self.assertEqual(spec_detail_lines(), {"A": LINE_A, "B": LINE_B})
+        self.assertNotEqual(LINE_A, LINE_B)
+        for line, kind in ((LINE_A, "T34"), (LINE_B, "T35")):
+            text = render(*FIXTURES[kind])
+            self.assertEqual(len(WRAP("     " + line)), 3)
+            self.assertIn("\n".join(WRAP("     " + line)) + "\n", text)
+            self.assertNotIn("this paragraph; words", text)
         # the fixtures hold none of the words, so a hit can only be the tool's own text
         texts = [as_bytes(t).decode("utf-8") for pair in FIXTURES.values() for t in pair]
         texts += list(T20_BASES) + [GOLDEN_OLD, GOLDEN_NEW]
