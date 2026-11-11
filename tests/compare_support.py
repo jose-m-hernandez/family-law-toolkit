@@ -7,6 +7,7 @@ T-number key to (old, new), each text or bytes; every pair differs, so the comma
 exits 1 on each.
 """
 
+import errno
 import io
 import os
 import re
@@ -36,6 +37,7 @@ CURLY = chr(0x2019)
 CYRILLIC_A = chr(0x430)
 RLO = chr(0x202E)
 LINE_SEP = chr(0x2028)
+IDEOGRAPHIC_SPACE = chr(0x3000)
 
 PA = "Parent A picks up the children."
 PB = "Parent B drops them off at the school."
@@ -91,6 +93,9 @@ def t35_pair(pieces=501):
     middle = " w" * (pieces - 2)
     return "a" + middle + " z\n", "a" + ZWSP + middle + " z" + ZWSP + "\n"
 
+
+T33_OLD = b"\xef\xbb\xbf" + (PA + "\n").encode()
+T33_NEW = (PB + "\n").encode()
 
 T29 = ("Parent A will pay the sum of $1,200.00 each month.", "Parent A will pay the sum of $1,250.00 each month.")
 T30 = ("The payment is due on March 3 of each year.", "The payment is due on March 8 of each year.")
@@ -164,6 +169,9 @@ FIXTURES = {
     "T31-extras": token_pair(*T31, extras=True),
     "T32": token_pair(*T32, at_start=True),
     "T32-extras": token_pair(*T32, at_start=True, extras=True),
+    "T33": (T33_OLD, T33_NEW),
+    "T33-edit": (T33_OLD, T33_NEW.replace(b"school", b"schoon")),
+    "T33-single": (b"a", b"b"),
     "T34": t34_pair(),
     "T35": t35_pair(),
 }
@@ -212,6 +220,15 @@ def spec_listed_phrases():
     return [phrase.strip() for phrase in re.split(r"[,;] ", line.rstrip("."))]
 
 
+def reason_for_errno(number):
+    """The reason section 7 (as built) gives for the error number of a failed stat or open."""
+    if number in (errno.ENOENT, errno.ENOTDIR):
+        return "no such file"
+    if number in (errno.EACCES, errno.EPERM):
+        return "permission denied"
+    return "it could not be read"
+
+
 def render(old, new, old_path="old.txt", new_path="new.txt"):
     old, new = as_bytes(old), as_bytes(new)
     differences.check(old)
@@ -253,16 +270,31 @@ def difference_lines(old, new, old_path="old.txt", new_path="new.txt"):
     return lines[lines.index("Differences") + 1:lines.index("Notes") - 1]
 
 
+def result_line(old, new):
+    """The report's whole `Result:` line for two texts."""
+    found = [line for line in page_free_lines(render(old, new)) if line.startswith("Result: ")]
+    assert len(found) == 1
+    return found[0]
+
+
+def raw_difference_lines(old, new):
+    """The wrapped lines of the Differences section, as printed."""
+    lines = page_free_lines(render(old, new))
+    return lines[lines.index("Differences") + 1:lines.index("Notes") - 1]
+
+
 class FakeStream:
     """A text stream with a binary buffer; fail_after_bytes makes the write raise after
-    that many bytes have gone in (0: before any byte)."""
+    that many bytes have gone in (0: before any byte). `writes` lists each call's data."""
 
     def __init__(self, fail_after_bytes=None):
         self.buffer = io.BytesIO()
         self.fail_after_bytes = fail_after_bytes
+        self.writes = []
         outer = self
 
         def write(data):
+            outer.writes.append(bytes(data))
             if outer.fail_after_bytes is not None:
                 io.BytesIO.write(outer.buffer, data[:outer.fail_after_bytes])
                 raise BrokenPipeError(32, "Broken pipe")

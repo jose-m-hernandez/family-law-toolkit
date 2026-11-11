@@ -15,8 +15,8 @@ from unittest import mock
 from family_law_toolkit.compare import __main__ as cli_main
 from family_law_toolkit.compare import differences, report
 from tests.compare_support import (
-    FIXTURES, PA, PB, PREFIX, ROOT, USAGE_END, FakeStream, Workdir, render, run_cli,
-    run_main, spec_help,
+    FIXTURES, IDEOGRAPHIC_SPACE, LINE_SEP, NBSP, PA, PB, PREFIX, ROOT, T33_NEW, T33_OLD, USAGE_END, FakeStream,
+    Workdir, reason_for_errno, render, run_cli, run_main, spec_help,
 )
 
 REFUSED = "is not a plain-text file; this version reads plain text and Markdown only"
@@ -81,12 +81,26 @@ class CommandTests(CliTestCase):
         self.assert_error(["--old", "a\nb.txt", "--new", self.good], "cannot read --old a<U+000A>b.txt: no such file")
         done = self.run_cli(b"--old", b"\xff.txt", "--new", self.good)
         self.assertEqual((done.returncode, done.stdout, done.stderr.count(b"\n")), (2, b"", 1))
-        line = done.stderr.decode("utf-8")
-        self.assertTrue(line.startswith(PREFIX + "cannot read --old <U+DCFF>.txt: "), line)
-        self.assertTrue(line.endswith((": no such file\n", ": it could not be read\n")), line)
+        # the reason is the one section 7 gives for whatever error number this file system
+        # raises for such a name, asked for here (ENOENT on one, EILSEQ on another)
+        try:
+            os.stat(os.path.join(os.fsencode(self.work.path), b"\xff.txt"))
+        except OSError as error:
+            reason = reason_for_errno(error.errno)
+        else:
+            self.fail("os.stat accepted the name, so there is no refusal to map")
+        self.assertEqual(done.stderr.decode("utf-8"), PREFIX + "cannot read --old <U+DCFF>.txt: " + reason + "\n")
         line = self.assert_usage_error(["--old", self.good, "--new", self.other, "--bo\ngus\x1b"])
         self.assertIn("<U+000A>gus<U+001B>", line)
         self.assertNotIn("\x1b", line)
+
+    def test_t19_other_whitespace_in_a_path_is_escaped(self):
+        # 5.3: in paths and standard-error lines each whitespace character other than a space is escaped
+        path = "my file" + LINE_SEP + "a" + NBSP + "b" + IDEOGRAPHIC_SPACE + "c.txt"
+        code, out, err = run_main(["--old", path, "--new", self.good])
+        self.assertEqual((code, out), (2, b""))
+        self.assertEqual(err.decode("utf-8"),
+                         PREFIX + "cannot read --old my file<U+2028>a<U+00A0>b<U+3000>c.txt: no such file\n")
 
     def test_t21_cannot_run_cases(self):
         os.mkdir(os.path.join(self.work.path, "sub"))
@@ -145,6 +159,9 @@ class CommandTests(CliTestCase):
                               "--%s was given more than once" % side, USAGE_END)
             self.assert_error(["--%s" % side, "-", "--%s" % other, self.other],
                               "--%s cannot be -" % side, USAGE_END)
+            # section 7: `was given more than once` is checked before `cannot be -`
+            self.assert_error(["--%s" % side, "-", "--%s" % side, "-", "--%s" % other, self.other],
+                              "--%s was given more than once" % side, USAGE_END)
 
     @unittest.skipIf(os.geteuid() == 0, "running as root: permission bits are not enforced")
     def test_t21_permission_denied(self):
@@ -153,6 +170,21 @@ class CommandTests(CliTestCase):
         self.addCleanup(os.chmod, locked, 0o600)
         for side in ("old", "new"):
             self.assert_error(self.argv(side, "locked.txt"), "cannot read --%s locked.txt: permission denied" % side)
+
+    def test_t21_not_a_directory_and_not_permitted(self):
+        # section 7 (as built): ENOTDIR gives `no such file`, EPERM gives `permission denied`
+        path = os.path.join(self.work.path, self.good)
+        real_stat = os.stat
+        for number, reason in ((errno.ENOTDIR, "no such file"), (errno.EPERM, "permission denied")):
+            def stat(name, *args, **kwargs):
+                if name == path:
+                    raise OSError(number, os.strerror(number))
+                return real_stat(name, *args, **kwargs)
+
+            with self.subTest(errno=errno.errorcode[number]), mock.patch.object(os, "stat", side_effect=stat):
+                code, out, err = run_main(["--old", path, "--new", os.path.join(self.work.path, self.other)])
+            self.assertEqual((code, out), (2, b""))
+            self.assertEqual(err.decode(), PREFIX + "cannot read --old %s: %s\n" % (path, reason))
 
     def test_t21_could_not_be_read(self):
         error = OSError(errno.EIO, "Input/output error")
@@ -235,6 +267,31 @@ class CommandTests(CliTestCase):
         process.stderr.close()
         self.assertEqual(process.wait(timeout=60), 2)
         self.assertEqual(stderr, line.encode())
+
+    def test_t23_one_write_call_to_the_buffer(self):
+        # 5.1: the whole report goes out in one write call, and each standard-error line likewise
+        args = ["--old", os.path.join(self.work.path, self.good), "--new", os.path.join(self.work.path, self.other)]
+        out, err = FakeStream(), FakeStream()
+        code, _, _ = run_main(args, stdout=out, stderr=err)
+        self.assertEqual(code, 1)
+        self.assertEqual(out.writes, [render(PA + "\n", PB + "\n", args[1], args[3]).encode("utf-8")])
+        self.assertEqual(err.writes, [])
+        out, err = FakeStream(), FakeStream()
+        code, _, _ = run_main(["--old", "missing.txt", "--new", self.good], stdout=out, stderr=err)
+        self.assertEqual(code, 2)
+        self.assertEqual(out.writes, [])
+        self.assertEqual(err.writes, [(PREFIX + "cannot read --old missing.txt: no such file\n").encode()])
+
+    def test_t33_header_through_the_command(self):
+        os.mkdir(os.path.join(self.work.path, "b"))
+        edited = T33_NEW.replace(b"school", b"schoon")
+        for name, old, new in (("bom", T33_OLD, T33_NEW), ("edited", T33_OLD, edited), ("single", b"a", b"b")):
+            with self.subTest(name):
+                self.work.write("a.txt", old)
+                self.work.write("b/c.txt", new)
+                done = self.run_cli("--old", "./a.txt", "--new", "b/c.txt")
+                self.assertEqual((done.returncode, done.stderr), (1, b""))
+                self.assertEqual(done.stdout, render(old, new, "./a.txt", "b/c.txt").encode("utf-8"))
 
     def test_t25_relative_path_as_typed(self):
         first = self.run_cli("--old", "./" + self.good, "--new", "../" + os.path.basename(self.work.path) + "/" + self.other)

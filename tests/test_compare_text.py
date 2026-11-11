@@ -11,7 +11,7 @@ import unittest
 from family_law_toolkit.compare import differences
 from tests.compare_support import (
     BILL, CURLY, CYRILLIC_A, FIXTURES, LINE_A, LINE_B, PA, PB, PC, RENT, T20_BASES, ZWSP,
-    as_bytes, difference_lines, paragraphs, render, t35_pair, words_line,
+    as_bytes, difference_lines, paragraphs, render, result_line, t35_pair, words_line,
 )
 
 OLD_NEW_1 = "old file paragraph 1, file line 1; new file paragraph 1, file line 1"
@@ -91,6 +91,17 @@ class DifferenceTests(unittest.TestCase):
             "new file paragraph 2, file line 4",
         ])
 
+    def test_t08_first_paragraphs_compare_the_blank_lines_before_them(self):
+        # 4.3: spacing before the paragraph is compared when both paragraphs are first in their files
+        self.assertEqual(difference_lines(b"\nParent A pays.\n", b"Parent A pays.\n"), [
+            "  1. Spacing before the paragraph: old file paragraph 1, file line 2; "
+            "new file paragraph 1, file line 1",
+        ])
+        self.assertEqual(difference_lines(b"\n\na b\n", b"a b\n"), [
+            "  1. Spacing before the paragraph: old file paragraph 1, file line 3; "
+            "new file paragraph 1, file line 1",
+        ])
+
     def test_t09_final_line_end_added(self):
         self.assertEqual(lines_of("T9"), ["  1. File: blank lines or line ends after the last paragraph differ"])
 
@@ -124,10 +135,30 @@ class DifferenceTests(unittest.TestCase):
             "  2. File: line ends: old LF, new mixed (CRLF 1, LF 2); first different at file line 2",
         ])
 
+    def test_t05_context_comes_from_the_new_file(self):
+        # 5.3: the context comes from the new file, except for an only-in-old word
+        self.assertEqual(difference_lines(b"one two three X\n", b"one 2 three Y\n"), [
+            "  1. Differs: " + OLD_NEW_1,
+            "     old: one two three X",
+            "     new: one 2 three Y",
+            '     - old file line 1, new file line 1: old "two", new "2", after "one"',
+            '     - old file line 1, new file line 1: old "X", new "Y", after "one 2 three"',
+        ])
+        self.assertEqual(difference_lines(b"one 2 three X\n", b"one two three\n")[-1],
+                         '     - old file line 1: only in old "X", after "one 2 three"')
+
     def test_t12_zero_width_space_in_a_word(self):
         self.assertEqual(lines_of("T12"), [
             "  1. Hidden or look-alike characters: " + OLD_NEW_1,
             '     - old "agree<U+200B>ment", new "agreement"',
+        ])
+
+    def test_t12_hidden_character_alone_between_spaces(self):
+        # 4.3: it shows as both a Hidden or look-alike characters entry and a Spacing in the paragraph entry
+        self.assertEqual(difference_lines(b"one two\n", ("one " + ZWSP + " two\n").encode("utf-8")), [
+            "  1. Hidden or look-alike characters: " + OLD_NEW_1,
+            '     - old (nothing), new "<U+200B>"',
+            "  2. Spacing in the paragraph: " + OLD_NEW_1,
         ])
 
     def test_t13_composed_against_decomposed(self):
@@ -277,6 +308,8 @@ class DifferenceTests(unittest.TestCase):
         old, new = FIXTURES["T34"]
         lines = difference_lines(old, new)
         self.assertEqual(kinds_of(old, new), ["differs"] * 3)
+        self.assertEqual(result_line(old, new), "Result: the files differ. Differs 3, only in old 0, only in new 0, "
+                         "spacing 0, hidden or look-alike characters 0, file 0.")
         heads = [l for l in lines if l.startswith("  ") and not l.startswith("     ")]
         self.assertEqual(heads[2], "  3. Differs: old file paragraph 5, file line 9; new file paragraph 5, file line 9")
         third = lines[lines.index(heads[2]):]
@@ -300,8 +333,8 @@ class DifferenceTests(unittest.TestCase):
             "     " + LINE_B,
         ])
         text = render(old, new)
-        self.assertIn("hidden or look-alike characters 1, file 0.", text)
-        self.assertIn("Differs 0, only in old 0, only in new 0, spacing 0, ", text)
+        self.assertEqual(result_line(old, new), "Result: the files differ. Differs 0, only in old 0, only in new 0, "
+                         "spacing 0, hidden or look-alike characters 1, file 0.")
         self.assertNotIn("words, figures and dates", text)
         self.assertNotIn("no difference", text.lower())
         # one piece fewer on each side: 500 x 500 = 250,000 runs, and lists its two runs

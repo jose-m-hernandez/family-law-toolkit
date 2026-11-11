@@ -3,7 +3,9 @@
 """Sections 5 and 6 of the compare spec, at report level (T19's report parts, T24, T25,
 T27, T33). The fixed lines are read from the spec itself, so a drift from it fails."""
 
+import errno
 import hashlib
+import os
 import re
 import textwrap
 import unittest
@@ -12,7 +14,8 @@ from unittest import mock
 from family_law_toolkit.compare import differences, report
 from tests.compare_support import (
     FIXTURES, GOLDEN_NEW, LINE_A, LINE_B, GOLDEN_OLD, GOLDEN_PATHS, PA, PB, ROOT, T20_BASES, Workdir,
-    as_bytes, difference_lines, page_free_lines, render, run_main, spec_help,
+    FakeStream, as_bytes, difference_lines, page_free_lines, paragraphs, raw_difference_lines, render,
+    result_line, run_main, spec_help,
     spec_detail_lines, spec_identity_line, spec_listed_phrases, spec_notes,
 )
 
@@ -156,7 +159,27 @@ class ReportTests(unittest.TestCase):
             lines.append(line.replace(work.path, "DIR"))
         with mock.patch.object(differences, "compare", side_effect=RuntimeError("boom")):
             lines.append(run_main(["--old", good, "--new", many_new])[2].decode().rstrip("\n"))
+        # the three messages the cases above do not reach: a failing write, and the two reasons that
+        # the file system can give for a file that cannot be read
+        other = work.write("other.txt", PB + "\n")
+        lines.append(run_main(["--old", good, "--new", other], stdout=FakeStream(fail_after_bytes=0))[2]
+                     .decode().rstrip("\n"))
+        for number in (errno.EPERM, errno.EIO):
+            real_stat = os.stat
+
+            def stat(path, *args, **kwargs):
+                if path == good:
+                    raise OSError(number, "refused")
+                return real_stat(path, *args, **kwargs)
+
+            with mock.patch.object(os, "stat", side_effect=stat):
+                code, out, err = run_main(["--old", good, "--new", other])
+            self.assertEqual((code, out, err.count(b"\n")), (2, b"", 1))
+            lines.append(err.decode().rstrip("\n"))
         self.assertEqual(phrase_hits([l.replace("python3 -m family_law_toolkit.compare: error: ", "") for l in lines]), [])
+        # positive control: the last three lines are the three messages added above
+        self.assertEqual([l.split(": ")[-1] for l in lines[-3:]],
+                         ["cannot write output", "permission denied", "it could not be read"])
         # the help: every line but the help sentences and the Educational line
         help_lines = spec_help().split("\n")
         exempt = {EDUCATIONAL, Q_C7_SENTENCE}
@@ -175,6 +198,57 @@ class ReportTests(unittest.TestCase):
         self.assertEqual(len(long_text.split("\f")), 2)
         changed = long_text.replace("\f" + spec_identity_line(), "\f" + spec_identity_line() + "!")
         self.assertIn("identity line", fixed_line_problems(changed))
+
+    def test_t27_result_line_counts(self):
+        head = "Result: the files differ. "
+        # 5.2: `spacing` counts both spacing labels, `file` counts every File entry
+        t8 = result_line(*FIXTURES["T8"])
+        self.assertEqual(t8, head + "Differs 0, only in old 0, only in new 0, spacing 1, "
+                         "hidden or look-alike characters 0, file 0.")
+        both = (paragraphs("a b", "c d"), "a\tb\n\n\n\nc d\n")
+        self.assertEqual(raw_difference_lines(*both), [
+            "  1. Spacing in the paragraph: old file paragraph 1, file line 1; new file paragraph 1, file line 1",
+            "  2. Spacing before the paragraph: old file paragraph 2, file line 3; new file paragraph 2, file line 5",
+        ])
+        self.assertEqual(result_line(*both), head + "Differs 0, only in old 0, only in new 0, spacing 2, "
+                         "hidden or look-alike characters 0, file 0.")
+        self.assertEqual(result_line(b"abc", b"abc\n"), head + "Differs 0, only in old 0, only in new 0, "
+                         "spacing 0, hidden or look-alike characters 0, file 2.")
+
+    def test_t19_a_control_character_alone_adds_the_code_points(self):
+        # 5.3: a character outside printable ASCII (U+0020 to U+007E) adds `; as code points:`
+        start = "     - old file line 1, new file line 1: "
+        self.assertEqual(difference_lines(b"one two\n", b"one two\x7f\n")[-1],
+                         start + 'old "two", new "two<U+007F>", after "one"; as code points: '
+                         'old "two", new "two<U+007F>"')
+        self.assertEqual(difference_lines(b"one two\n", b"one two\x1b\n")[-1],
+                         start + 'old "two", new "two<U+001B>", after "one"; as code points: '
+                         'old "two", new "two<U+001B>"')
+        self.assertEqual(difference_lines(b"x\n", b"x \x1b\n")[-1],
+                         '     - new file line 1: only in new "<U+001B>", after "x"; as code points: '
+                         'only in new "<U+001B>"')
+        # and a piece of printable ASCII alone adds nothing
+        self.assertNotIn("as code points", difference_lines(b"one two\n", b"one 2\n")[-1])
+
+    def test_t19_long_tokens_are_not_split_across_lines(self):
+        # 5.2: break_long_words=False, break_on_hyphens=False; a longer word runs past 78
+        plain = ("x" * 110, "y" * 110)
+        hyphenated = ("p" * 40 + "-" + "q" * 40 + "-" + "r" * 20, "p" * 40 + "-" + "s" * 40 + "-" + "r" * 20)
+        for old, new in (plain, hyphenated):
+            with self.subTest(old=old[:5] + "..."):
+                lines = raw_difference_lines("a " + old + "\n", "a " + new + "\n")
+                self.assertEqual(lines, [
+                    "  1. Differs: old file paragraph 1, file line 1; new file paragraph 1, file line 1",
+                    "     old: a",
+                    "       " + old,
+                    "     new: a",
+                    "       " + new,
+                    "     - old file line 1, new file line 1: old",
+                    '       "' + old + '",',
+                    "       new",
+                    '       "' + new + '",',
+                    '       after "a"',
+                ])
 
     def test_t25_determinism(self):
         old, new = FIXTURES["T2"]
