@@ -90,6 +90,24 @@ T30 = ("The payment is due on March 3 of each year.", "The payment is due on Mar
 T31 = ("Parent B shall pay the school fees.", "Parent B shall not pay the school fees.")
 T32 = ("[X] Parent A will attend the meeting.", "[ ] Parent A will attend the meeting.")
 
+# The T27 golden pair: shaped like the spec's 5.2 example, with a Differs entry that reaches
+# the matching limit (501 x 500 words), a Hidden or look-alike characters entry over two
+# lines, a one-line Spacing entry and an Only in new entry.
+GOLDEN_PATHS = ("drafts/declaration-v1.txt", "drafts/declaration-v2.txt")
+GOLDEN_OLD = "\n".join([
+    "Parent A picks up the children at the school on Fridays.", "",
+    words_line(501, "a"), "",
+    "Parent B keeps the agreement", "for the children.", "",
+    "Parent A and Parent B meet at the school gate.",
+]) + "\n"
+GOLDEN_NEW = "\n".join([
+    "Parent A picks up the children at the school on Fridays.", "",
+    words_line(500, "b"), "",
+    "Parent B keeps the agree" + ZWSP + "ment", "for the children.", "",
+    "Parent A and Parent B meet at the school gate. ", "",
+    "The exchange is at the school.",
+]) + "\n"
+
 FIXTURES = {
     "T2": ("Parent A picks up the children at 6:00 p.m. on Fridays.\n",
            "Parent A picks up the children at 6:30 p.m. on Fridays.\n"),

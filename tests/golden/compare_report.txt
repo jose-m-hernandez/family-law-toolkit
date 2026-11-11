@@ -1,0 +1,80 @@
+family-law-toolkit v0.1.0 — not certified for court filing
+
+Comparison of two text files
+Educational; not legal advice; not certified for court filing; consult counsel.
+
+Files
+  Old (--old): drafts/declaration-v1.txt
+    1,156 bytes; 8 lines; 4 paragraphs; byte-order mark: no; line ends: LF
+    sha256: d1f6a13be9a6ec556e93b6fa2bb6b0972a8e99f426297aeb3fdb14eadef8fb7f
+  New (--new): drafts/declaration-v2.txt
+    1,190 bytes; 10 lines; 5 paragraphs; byte-order mark: no; line ends: LF
+    sha256: d6b86d480e2c7391d01ec10245b2aa73c6cb4bc68e86399698cd6c37a70775c9
+
+Result: the files differ. Differs 1, only in old 0, only in new 1, spacing 1, hidden or look-alike characters 1, file 0.
+
+Differences
+  1. Differs: old file paragraph 2, file line 3; new file paragraph 2, file line 3
+     old: a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a
+       a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a
+       a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a
+       a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a
+       a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a
+       a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a
+       a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a
+       a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a
+       a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a
+       a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a
+       a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a
+       a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a
+       a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a
+       a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a
+     new: b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b
+       b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b
+       b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b
+       b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b
+       b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b
+       b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b
+       b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b
+       b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b
+       b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b
+       b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b
+       b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b
+       b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b
+       b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b
+       b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b b
+     Detail not shown: this tool's matching limit was reached. The files
+       differ in this paragraph; words, figures and dates that differ inside
+       it are not listed.
+  2. Hidden or look-alike characters: old file paragraph 3, file lines 5-6; new file paragraph 3, file lines 5-6
+     - old "agreement", new "agree<U+200B>ment"
+  3. Spacing in the paragraph: old file paragraph 4, file line 8; new file paragraph 4, file line 8
+  4. Only in new: new file paragraph 5, file line 10; after old file paragraph 4
+     new: The exchange is at the school.
+
+Notes
+  This report lists differences in the text of the two files. It does not say
+  whether any difference matters.
+  It reads both files as plain text. Fonts, bold, italics, page layout,
+  checked boxes and form fields are not compared, and Markdown markup is read
+  as ordinary characters.family-law-toolkit v0.1.0 — not certified for court filing
+
+  Moves are not tracked: a paragraph that moved, or the paragraphs it moved
+  past, may be listed as only in old at one place and only in new at another.
+  "Old" and "new" are the labels you gave. This tool does not check which file
+  is older, who changed either file, when, or whether either was filed or
+  served.
+  This report can repeat text from both files and prints their paths as you
+  typed them. Keep it as private as the files.
+  Paragraph and line numbers in this report count the paragraphs and lines of
+  each file as saved (lines end at LF, CR or CRLF). They are not the paper's
+  own numbered paragraphs, or the page and line numbers of a printed or filed
+  copy.
+  Spacing and hidden or look-alike characters are not compared inside a
+  Differs entry. Blank lines are not compared at, just before or just after a
+  Differs, Only in old or Only in new entry, except at the end of a file. When
+  both files use the same kinds of line end and their text differs elsewhere,
+  where the line ends sit is not compared.
+  If a file was made from a PDF or a form, checked boxes, form fields, stamps
+  and signatures may be missing from it. This report covers only the text in
+  the two files.
