@@ -16,11 +16,15 @@ disposable income the person enters. With two or more children, and
 `--same-time-sharing-arrangement yes`, it also shows the per-child allocation
 of section 4055(b)(8). It does not work out net disposable income. The second
 is `python3 -m family_law_toolkit.compare --old FILE --new FILE`, which
-compares two files' text: it reads two UTF-8 plain-text or Markdown files and
-prints a plain-text report of the differences in their text, by paragraph and
-then by word, with each file's path, byte size and sha256. It does not say
-whether any difference matters, and it does not read PDF or Word files or
-compare formatting. Nothing else ships. Assembling exhibit packets and binders
+compares two files' text. It reads two UTF-8 plain-text or Markdown files, up
+to 200,000 bytes each, and prints a plain-text report of the differences in
+their text, by paragraph and then by word, with each file's path, byte size and
+sha256. Exit status 0 means the files are identical byte for byte, 1 means they
+differ, and 2 means the comparison could not run; say which. It does not say
+whether any difference matters, does not read PDF or Word files, and does not
+compare formatting. Report what it lists; what a difference means for the
+person's case is for a lawyer, the court's self-help center, or the family law
+facilitator. Nothing else ships. Assembling exhibit packets and binders
 does not exist yet. If the person asks you to do something this repository does
 not yet do, say so plainly instead of improvising it.
 

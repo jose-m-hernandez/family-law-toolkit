@@ -5,9 +5,7 @@ Tools for people preparing California family-law paperwork. Today: a guideline c
 Educational; not legal advice; not certified for court filing; consult counsel.
 
 Early development, and not ready for other people to use. This repository is
-private and not yet published. Two commands exist: steps 1 and 2 of a guideline
-child-support calculator, and a command that compares two files' text. Nothing
-else is built yet.
+private and not yet published.
 
 - What changes, and when: [CHANGELOG.md](CHANGELOG.md)
 - How changes are made: [CONTRIBUTING.md](CONTRIBUTING.md)
@@ -32,19 +30,20 @@ This command compares two files' text and lists the differences it finds, so you
 
 Run it from the repository root, with the same Python as above:
 
-    python3 -m family_law_toolkit.compare --old notes/parent-a-letter-1.txt --new notes/parent-a-letter-2.txt
+    python3 -m family_law_toolkit.compare --old notes/letter-a.txt --new notes/letter-b.txt
 
-The file names are invented. "Old" and "new" are only labels you choose; the tool does not check which file is older. It prints a plain-text report to the terminal: each file's path, byte size and sha256, then the differences in the text, by paragraph and then by word. Differences in spacing, line ends, the byte-order mark, and hidden or look-alike characters are listed separately. The exit status is 0 when the two files are identical byte for byte, 1 when they differ, and 2 when the comparison could not run. Add `--help` to see what each flag means.
+The file names are invented. "Old" and "new" are only labels you choose. The command prints a plain-text report to the terminal: each file's path, byte size and sha256, then the differences in the text, by paragraph and then by word. Differences in spacing, line ends, the byte-order mark, and hidden or look-alike characters are listed separately.
+
+The exit status is 0 when the two files are identical byte for byte, 1 when they differ, and 2 when the comparison could not run. Add `--help` to see what each flag means.
 
 What it does not do:
 
 - It does not say whether any difference matters.
-- It reads plain text only. Fonts, bold, italics, page layout, checked boxes and form fields are not compared, and Markdown markup is read as ordinary characters. If a file was made from a PDF or a form, checked boxes, form fields, stamps and signatures may be missing from it.
+- It reads plain text only. Fonts, bold, italics, page layout, checked boxes and form fields are not compared, and Markdown markup is read as ordinary characters. A file made from a PDF or a form may lack checked boxes, form fields, stamps and signatures.
 - It does not track moves: a paragraph that moved, or the paragraphs it moved past, may be listed as only in old at one place and only in new at another.
 - It does not know which file is older, or who wrote either file, or when.
 - Its paragraph and line numbers count each file as saved. They are not the paper's own numbered paragraphs, or the page and line numbers of a printed copy.
-- Spacing and hidden or look-alike characters are not compared inside a paragraph whose words differ, and blank lines next to such a paragraph are not compared, except at the end of a file.
-- A very long run of differing paragraphs is refused, and past this tool's matching limit an entry says that its word detail is not shown.
+- Some places are not compared. Inside a paragraph whose words differ, spacing and hidden or look-alike characters are not compared. Blank lines next to such a paragraph are not compared either, except at the end of a file. A very long run of differing paragraphs is refused, and past this tool's matching limit an entry says that its word detail is not shown.
 
 The report can repeat text from both files and prints their paths as you typed them. Keep it as private as the files.
 
