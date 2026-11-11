@@ -10,6 +10,7 @@ import sys
 
 from family_law_toolkit.compare import differences, report
 
+_LIMIT = "{:,}".format(differences.MAX_BYTES)
 _PROG = "python3 -m family_law_toolkit.compare"
 _USAGE_END = ". Run with --help to see what each flag means."
 _NOT_PLAIN = "is not a plain-text file; this version reads plain text and Markdown only"
@@ -24,7 +25,7 @@ _HELP_TEXT = """\
 usage: python3 -m family_law_toolkit.compare --old FILE --new FILE
 
 Compare the text of two files.
-Educational; not legal advice; not certified for court filing; consult counsel.
+{educational}
 
 Required:
   --old FILE
@@ -32,7 +33,7 @@ Required:
   --new FILE
       The other file: plain text or Markdown
 
-Each file is read as UTF-8 text, up to 200,000 bytes. PDF and Word files are
+Each file is read as UTF-8 text, up to {limit} bytes. PDF and Word files are
 not read. "Old" and "new" are your labels; this tool does not check which file
 is older.
 It lists differences in the text. It does not say whether any difference
@@ -40,7 +41,7 @@ matters.
 The report is not a certified comparison and is not a court record.
 
 Exit status: 0 the files are identical byte for byte, 1 they differ, 2 the
-comparison could not run."""
+comparison could not run.""".format(educational=report.EDUCATIONAL_LINE, limit=_LIMIT)
 
 
 class _Failure(Exception):
@@ -74,7 +75,11 @@ def _write(name, data):
     except Exception:
         if name == "stdout":
             try:  # keep Python from failing again when it flushes at exit
-                os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+                devnull = os.open(os.devnull, os.O_WRONLY)
+                try:
+                    os.dup2(devnull, sys.stdout.fileno())
+                finally:
+                    os.close(devnull)
             except Exception:
                 pass
         raise _WriteFailure() from None
@@ -104,7 +109,7 @@ def _read(option, path):
     except OSError as error:
         raise _Failure("cannot read %s %s: %s" % (option, path, _reason(error))) from None
     if len(data) > differences.MAX_BYTES:
-        raise _Failure("%s %s is larger than 200,000 bytes" % (option, path))
+        raise _Failure("%s %s is larger than %s bytes" % (option, path, _LIMIT))
     if path.lower().endswith(_REFUSED_SUFFIXES):
         raise _Failure("%s %s %s" % (option, path, _NOT_PLAIN))
     return data
