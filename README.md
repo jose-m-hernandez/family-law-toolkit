@@ -77,7 +77,7 @@ What it does not do:
 - It does not say whether any difference matters.
 - It reads plain text only. Fonts, bold, italics, page layout, checked boxes and form fields are not compared, and Markdown markup is read as ordinary characters. A file made from a PDF or a form may lack checked boxes, form fields, stamps and signatures.
 - It does not track moves: a paragraph that moved, or the paragraphs it moved past, may be listed as only in old at one place and only in new at another.
-- It does not know which file is older, or who wrote either file, or when.
+- It does not know which file is older, who wrote either file or when, or whether either is the copy a court or another person holds.
 - Its paragraph and line numbers count each file as saved. They are not the paper's own numbered paragraphs, or the page and line numbers of a printed copy.
 - Some places are not compared. Inside a paragraph whose words differ, spacing and hidden or look-alike characters are not compared. Blank lines next to such a paragraph are not compared either, except at the end of a file. A very long run of differing paragraphs is refused, and past this tool's matching limit an entry says that its word detail is not shown.
 
