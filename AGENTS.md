@@ -22,7 +22,8 @@ their text, by paragraph and then by word, with each file's path, byte size and
 sha256. Exit status 0 means the files are identical byte for byte, 1 means they
 differ, and 2 means the comparison could not run; say which. It does not say
 whether any difference matters, does not read PDF or Word files, and does not
-compare formatting. Report what it lists; what a difference means for the
+compare formatting. Report what it lists; its Notes say what is not compared,
+so do not call the list complete; what a difference means for the
 person's case is for a lawyer, the court's self-help center, or the family law
 facilitator. Nothing else ships. Assembling exhibit packets and binders
 does not exist yet. If the person asks you to do something this repository does
