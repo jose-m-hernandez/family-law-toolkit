@@ -20,6 +20,42 @@ Run it from the repository root, the folder that contains `family_law_toolkit/`:
 
 The numbers are invented. It prints a text report to the terminal. Add `--help` to see what each flag means.
 
+With the numbers above, the report reads:
+
+    family-law-toolkit v0.1.0 — not certified for court filing; not affiliated with DissoMaster or XSpouse
+
+    Guideline child support (California Family Code section 4055)
+    Amounts are monthly dollars, rounded to the nearest cent (halves round up).
+
+    Inputs as given
+      Parent A net disposable income: 6919.09
+      Parent B net disposable income: 2255.71
+      Parent A's share of time: 35%
+      Number of children: 2
+      Hourly state minimum wage used (Lab. Code 1182.12): 21.00
+
+    Formula
+      Total net disposable income, TN (FC 4055(b)(1)(E)): 9174.80
+      High earner (FC 4055(b)(1)(C)): Parent A
+      High earner's share of time, H% (FC 4055(b)(1)(D)): 35%
+      K table row (FC 4055(b)(3)): 3
+      K (FC 4055(b)(3)): 0.337500
+      HN, the high earner's net disposable income: 6919.09
+      Formula result, CS = K[HN - (H%)(TN)] (FC 4055(a)): 1251.42
+      Children multiplier (FC 4055(b)(4)): 1.6
+      CS times multiplier (FC 4055(b)(4)): 2002.27
+      Paying parent (FC 4055(b)(5)): Parent A
+      Support amount (FC 4055(a), (b)(4)): 2002.27
+
+    Low-income adjustment (FC 4055(b)(7); range under FC 4055(c))
+      Threshold (FC 4055(b)(7)): 3640.00 = hourly minimum wage x 40 x 52 / 12
+      The paying parent's net disposable income is not less than the threshold, so the low-income adjustment does not apply (FC 4055(b)(7)).
+
+    You enter net disposable income yourself. This version does not work it out from deductions (FC 4059).
+    You enter the share of time yourself. The default-proceeding rule (FC 4055(b)(6)) is not applied.
+    The per-child allocation (FC 4055(b)(8)) is shown only if you add --same-time-sharing-arrangement yes. It does not apply when the children have different time-sharing arrangements.
+
+
 You enter net disposable income yourself. This version does not work it out from deductions (FC 4059).
 
 For help working out the figures for your own case, you can ask a lawyer, your court's self-help center, or its family law facilitator.
