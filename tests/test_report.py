@@ -92,6 +92,9 @@ G1_ARGS = cli_args(case_by_id("G1"))
 FLAG = "--same-time-sharing-arrangement"
 HEADING_OLD = "Guideline child support, step 1 (California Family Code section 4055)"
 HEADING_NEW = "Guideline child support (California Family Code section 4055)"
+CLOSING_LINE_TEXT = (
+    "This report is arithmetic on the figures you entered. It is not legal advice."
+)
 E1_LINE = "The per-child allocation (FC 4055(b)(8)) is not shown."
 E2_LINE = (
     "The per-child allocation (FC 4055(b)(8)) is shown only if you add "
@@ -997,6 +1000,8 @@ class AllocationReportTests(unittest.TestCase):
                     self.assertNotIn(E1_LINE, lines)
                 done = run_cli(*cli_args(case))
                 self.assertEqual(done.returncode, 0, done.stderr)
+                self.assertEqual(lines[-1], "")  # the fixture ends with a newline
+                lines[-1:] = ["", CLOSING_LINE_TEXT, ""]  # the closing line
                 self.assertEqual(done.stdout, "\n".join(lines))
 
     def test_13_i_ii_no_negative_and_every_exact_amount_positive(self):  # test 13 (i), (ii)

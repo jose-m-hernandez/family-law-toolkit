@@ -6,18 +6,28 @@ task here.
 
 ## Status
 
-Early development, and not ready for other people to use. One command ships:
-`python3 -m family_law_toolkit.support`. It takes five required inputs
-(`--a-ndi`, `--b-ndi`, `--a-time-percent`, `--children`,
+Early development, and not ready for other people to use. Two commands ship.
+The first is `python3 -m family_law_toolkit.support`. It takes five required
+inputs (`--a-ndi`, `--b-ndi`, `--a-time-percent`, `--children`,
 `--minimum-wage-hourly`) and one optional input
 (`--same-time-sharing-arrangement`), and prints a text report of the California
 guideline child-support formula (Family Code section 4055) on the net
 disposable income the person enters. With two or more children, and
 `--same-time-sharing-arrangement yes`, it also shows the per-child allocation
-of section 4055(b)(8). It does not work out net disposable income. Nothing else
-ships. Comparing drafts and assembling exhibit packets and binders do not
-exist yet. If the person asks you to do something this repository does not yet
-do, say so plainly instead of improvising it.
+of section 4055(b)(8). It does not work out net disposable income. The second
+is `python3 -m family_law_toolkit.compare --old FILE --new FILE`, which
+compares two files' text. It reads two UTF-8 plain-text or Markdown files, up
+to 200,000 bytes each, and prints a plain-text report of the differences in
+their text, by paragraph and then by word, with each file's path, byte size and
+sha256. Exit status 0 means the files are identical byte for byte, 1 means they
+differ, and 2 means the comparison could not run; say which. It does not say
+whether any difference matters, does not read PDF or Word files, and does not
+compare formatting. Report what it lists; its Notes say what is not compared,
+so do not call the list complete; what a difference means for the
+person's case is for a lawyer, the court's self-help center, or the family law
+facilitator. Nothing else ships. Assembling exhibit packets and binders
+does not exist yet. If the person asks you to do something this repository does
+not yet do, say so plainly instead of improvising it.
 
 ## Standing orders
 
