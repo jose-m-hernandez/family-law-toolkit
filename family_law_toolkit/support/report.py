@@ -15,6 +15,9 @@ IDENTITY_LINE = (
     + __version__
     + " — not certified for court filing; not affiliated with DissoMaster or XSpouse"
 )
+CLOSING_LINE = (
+    "This report is arithmetic on the figures you entered. It is not legal advice."
+)
 PAGE_LINES = 60
 BODY_LINES_PER_PAGE = PAGE_LINES - 2  # the identity line and one blank line
 
@@ -246,4 +249,5 @@ def render_report(result):
             body.append(NOTE_PER_CHILD_NO_FLAG)
         elif shown is None:
             body.append(NOTE_PER_CHILD_NO_PAYER)
+    body += ["", CLOSING_LINE]
     return "\f".join(paginate(body))

@@ -41,3 +41,4 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - A bad value on the command line now produces an error that names the flag you typed (for example `--a-ndi`), not the Python parameter (`a_ndi`). `compute()` and its error messages are unchanged.
 - Giving `--a-time-percent` more than once no longer keeps only the last value: each value is one child's share.
 - The README shows the report the example command prints.
+- The support report ends with a line saying it is arithmetic on the figures entered and is not legal advice.

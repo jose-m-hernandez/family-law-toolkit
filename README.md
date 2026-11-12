@@ -55,6 +55,8 @@ With the numbers above, the report reads:
     You enter the share of time yourself. The default-proceeding rule (FC 4055(b)(6)) is not applied.
     The per-child allocation (FC 4055(b)(8)) is shown only if you add --same-time-sharing-arrangement yes. It does not apply when the children have different time-sharing arrangements.
 
+    This report is arithmetic on the figures you entered. It is not legal advice.
+
 
 You enter net disposable income yourself. This version does not work it out from deductions (FC 4059).
 

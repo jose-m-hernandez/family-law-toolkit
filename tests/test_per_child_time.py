@@ -338,17 +338,22 @@ def normalise_list_report(text):
     """Make a per-child report of equal shares read like the single-share one.
 
     (a) the by-child echo becomes the single-share echo; (b) the one
-    READING_AVERAGE_LINE line is deleted.
+    READING_AVERAGE_LINE line is deleted. Deleting a line moves the page
+    breaks, so the body is paginated again (the page headers are dropped
+    first and report.paginate puts them back).
     """
+    body = []
+    for page in text.split("\f"):
+        body += page.split("\n")[2:]
     out = []
-    for line in text.split("\n"):
+    for line in body:
         if line == S_READ:
             continue
         match = re.match(r"^  Parent A's share of time, by child: (\d+)%(?:, \1%)*$", line)
         if match:
             line = "  Parent A's share of time: %s%%" % match.group(1)
         out.append(line)
-    return "\n".join(out)
+    return "\f".join(report.paginate(out))
 
 
 if __name__ == "__main__":
