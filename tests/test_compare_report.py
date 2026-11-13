@@ -20,7 +20,7 @@ from tests.compare_support import (
 )
 
 EDUCATIONAL = "Educational; not legal advice; not certified for court filing; consult counsel."
-Q_C7_SENTENCE = "The report is not a certified comparison and is not a court record."
+NOT_CERTIFIED_SENTENCE = "The report is not a certified comparison and is not a court record."
 
 
 def WRAP(line):
@@ -182,7 +182,7 @@ class ReportTests(unittest.TestCase):
                          ["cannot write output", "permission denied", "it could not be read"])
         # the help: every line but the help sentences and the Educational line
         help_lines = spec_help().split("\n")
-        exempt = {EDUCATIONAL, Q_C7_SENTENCE}
+        exempt = {EDUCATIONAL, NOT_CERTIFIED_SENTENCE}
         self.assertEqual({line for line, _ in phrase_hits(help_lines)} - exempt, set())
         self.assertEqual(run_main(["--help"])[1], (spec_help() + "\n").encode("utf-8"))
         # positive controls: a listed word in generated text, and a changed fixed line

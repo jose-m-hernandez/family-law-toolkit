@@ -42,3 +42,4 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Giving `--a-time-percent` more than once no longer keeps only the last value: each value is one child's share.
 - The README shows the report the example command prints.
 - The support report ends with a line saying it is arithmetic on the figures entered and is not legal advice.
+- The compare tests' fixture T2 uses other invented times, two code comments drop a cross-reference, and two test constants are named after the text they hold. Neither command's behaviour changes.

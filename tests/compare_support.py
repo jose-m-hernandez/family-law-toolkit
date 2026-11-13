@@ -121,8 +121,8 @@ GOLDEN_NEW = "\n".join([
 ]) + "\n"
 
 FIXTURES = {
-    "T2": ("Parent A picks up the children at 6:00 p.m. on Fridays.\n",
-           "Parent A picks up the children at 6:30 p.m. on Fridays.\n"),
+    "T2": ("Parent A picks up the children at 4:15 p.m. on Fridays.\n",
+           "Parent A picks up the children at 4:45 p.m. on Fridays.\n"),
     "T3a": (paragraphs(PB), paragraphs(PA, PB)),
     "T3b": (paragraphs(PA, PB), paragraphs(PA, PC, PB)),
     "T4a": (paragraphs(PA, PB), paragraphs(PB)),
@@ -176,7 +176,7 @@ FIXTURES = {
     "T35": t35_pair(),
 }
 
-# The two fixed detail lines, written from the spec's 4.4 (Q-C13); T24 also reads the spec.
+# The two fixed detail lines, written from the spec's 4.4; T24 also reads the spec.
 LINE_A = ("Detail not shown: this tool's matching limit was reached. The files differ in the "
           "paragraphs this entry names; words, figures and dates that differ inside them are not listed.")
 LINE_B = ("Detail not shown: this tool's matching limit was reached. The files differ in the "

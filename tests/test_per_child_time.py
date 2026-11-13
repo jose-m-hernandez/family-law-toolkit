@@ -29,7 +29,7 @@ LIA = ("3000.00", "500.00")
 WAGE = "21.00"
 FLAG = "--same-time-sharing-arrangement"
 
-GC_DIFFERENT_SHARES = "This toolkit reads different percentages of time for different children as different time-sharing arrangements, so the per-child allocation (FC 4055(b)(8)) does not apply."
+EXPECTED_DIFFERENT_SHARES_NOTE = "This toolkit reads different percentages of time for different children as different time-sharing arrangements, so the per-child allocation (FC 4055(b)(8)) does not apply."
 
 S_READ = (
     "  This toolkit reads the average in FC 4055(b)(1)(D) as the high earner's "
@@ -111,7 +111,7 @@ class PerChildTimeTests(unittest.TestCase):
         )
         self.assertEqual(text.count(NOTE_PER_CHILD_DIFFERENT_SHARES), 1)
         self.assertNotIn(NOTE_PER_CHILD_DIFFERENT, text)
-        self.assertEqual(report.NOTE_PER_CHILD_DIFFERENT_SHARES, GC_DIFFERENT_SHARES)
+        self.assertEqual(report.NOTE_PER_CHILD_DIFFERENT_SHARES, EXPECTED_DIFFERENT_SHARES_NOTE)
 
     def test_averaging_a_then_taking_the_high_earner_equals_the_other_order(self):
         cases = (
