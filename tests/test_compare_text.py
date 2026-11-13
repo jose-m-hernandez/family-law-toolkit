@@ -30,9 +30,9 @@ class DifferenceTests(unittest.TestCase):
     def test_t02_one_word_differs(self):
         self.assertEqual(lines_of("T2"), [
             "  1. Differs: " + OLD_NEW_1,
-            "     old: Parent A picks up the children at 4:15 p.m. on Fridays.",
-            "     new: Parent A picks up the children at 4:45 p.m. on Fridays.",
-            '     - old file line 1, new file line 1: old "4:15", new "4:45", after "the children at"',
+            "     old: Parent A picks up the children at 1:20 p.m. on Fridays.",
+            "     new: Parent A picks up the children at 1:50 p.m. on Fridays.",
+            '     - old file line 1, new file line 1: old "1:20", new "1:50", after "the children at"',
         ])
 
     def test_t03_paragraph_only_in_new(self):

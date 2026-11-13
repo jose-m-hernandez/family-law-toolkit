@@ -121,8 +121,8 @@ GOLDEN_NEW = "\n".join([
 ]) + "\n"
 
 FIXTURES = {
-    "T2": ("Parent A picks up the children at 4:15 p.m. on Fridays.\n",
-           "Parent A picks up the children at 4:45 p.m. on Fridays.\n"),
+    "T2": ("Parent A picks up the children at 1:20 p.m. on Fridays.\n",
+           "Parent A picks up the children at 1:50 p.m. on Fridays.\n"),
     "T3a": (paragraphs(PB), paragraphs(PA, PB)),
     "T3b": (paragraphs(PA, PB), paragraphs(PA, PC, PB)),
     "T4a": (paragraphs(PA, PB), paragraphs(PB)),
