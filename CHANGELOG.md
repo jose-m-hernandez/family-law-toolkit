@@ -29,6 +29,7 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - README and `--help`: one sentence on where to ask for help working out the figures for your own case.
 - Each Python source file states its licence (SPDX AGPL-3.0-or-later) and copyright holder, and the README names the holder.
 - A command that compares two files' text: `python3 -m family_law_toolkit.compare --old FILE --new FILE`. It reads two UTF-8 plain-text or Markdown files and prints a plain-text report of their differences. The exit status is 0 when the files are identical byte for byte, 1 when they differ, and 2 when the comparison could not run. It does not say whether any difference matters.
+- A fifth-week counter in JavaScript: `node js/nth-week.js`. It needs Node.js and no packages to install. It counts the months, in a range of years, that contain five of a chosen weekday, and prints each such date, a count per year and a summary. `--anchor` or `--weekday` is required. Its tests run on Node's built-in test runner in a new CI job, `node-tests`, and the rule for JavaScript tools is recorded in `docs/decisions/2026-11-13-javascript-tools-live-in-js-and-use-only-node.md`.
 
 ### Changed
 

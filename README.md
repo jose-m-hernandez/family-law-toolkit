@@ -1,6 +1,6 @@
 # family-law-toolkit
 
-Tools for people preparing California family-law paperwork. Today: a guideline child-support calculator (steps 1 and 2: the support amount, and its allocation per child), and a command that compares two files' text. Not built yet: assembling exhibit packets and binders.
+Tools for people preparing California family-law paperwork. Today: a guideline child-support calculator (steps 1 and 2: the support amount, and its allocation per child), a command that compares two files' text, and a counter of months that have five of a chosen weekday. Not built yet: assembling exhibit packets and binders.
 
 Educational; not legal advice; not certified for court filing; consult counsel.
 
@@ -12,7 +12,7 @@ private and not yet published.
 
 ## Running it
 
-Needs Python 3.9 or later and nothing else to install. CI runs the tests on 3.9 and on the latest 3.x.
+Needs Python 3.9 or later and nothing else to install. CI runs the tests on 3.9 and on the latest 3.x. The fifth-week counter is the one exception: it is JavaScript, it needs Node.js (CI uses Node 26), and it needs nothing else to install.
 
 Run it from the repository root, the folder that contains `family_law_toolkit/`:
 
@@ -88,6 +88,22 @@ The report can repeat text from both files and prints their paths as you typed t
 
 For help with what a difference means for your own case, you can ask a lawyer, your court's self-help center, or its family law facilitator.
 
+## Counting fifth weeks
+
+This command counts the months, in a range of years, that contain five of a chosen weekday. It prints each date that is a fifth occurrence, a count for each year, and a summary.
+
+You must choose the weekday. Give `--anchor` with a weekday name (for example `Tuesday`, or `Tuesday,Wednesday`), or `--weekday` with a number (0 is Sunday, 1 is Monday, 2 is Tuesday, and so on). `--start` and `--end` are the first and last year; they default to this year and 18 years after it.
+
+Run it from the repository root. It is JavaScript, so it runs with `node`, not `python3`:
+
+    node js/nth-week.js --anchor Tuesday --start 2031 --end 2031
+
+It lists 2031-04-29, 2031-07-29, 2031-09-30 and 2031-12-30.
+
+Every run first writes the line `Educational; not legal advice; not certified for court filing; consult counsel.` to standard error. A run with no anchor writes a message and the usage to standard error, writes nothing to standard output, and exits with status 1. Its `--help` names the file `nth-week.js`, so from the repository root give the path `js/nth-week.js`.
+
+Dates are calculated in the computer's time zone and printed as UTC dates, so on a computer set to a time zone east of UTC they can print a day early.
+
 ## Licence
 
 Copyright © 2026 Jose Miguel Hernandez. Licensed under the GNU Affero General Public License v3.0 or later (see [LICENSE](LICENSE)). A commercial licence is also available from the copyright holder.
@@ -97,6 +113,10 @@ Copyright © 2026 Jose Miguel Hernandez. Licensed under the GNU Affero General P
 Run the tests:
 
     python3 -m unittest discover -s tests -t . -v
+
+The fifth-week counter's tests run on Node's built-in test runner:
+
+    node --test --test-reporter=tap js/tests/nth-week.test.js
 
 The tests use invented data.
 
