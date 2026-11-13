@@ -155,9 +155,9 @@ Result: the files differ. Differs 1, only in old 0, only in new 1, spacing 1, hi
 
 Differences
   1. Differs: old file paragraph 3, file lines 7-9; new file paragraph 3, file lines 7-9
-     old: Parent B picked up the children at 6:00 p.m. on Fridays.
-     new: Parent B picked up the children at 6:30 p.m. on Fridays.
-     - old file line 8, new file line 8: old "6:00", new "6:30", after "the children at"
+     old: Parent B picked up the children at 1:20 p.m. on Fridays.
+     new: Parent B picked up the children at 1:50 p.m. on Fridays.
+     - old file line 8, new file line 8: old "1:20", new "1:50", after "the children at"
   2. Only in new: new file paragraph 5, file lines 13-15; after old file paragraph 4
      new: Parent A and Parent B exchanged the children at the school.
   3. Spacing in the paragraph: old file paragraph 6, file lines 17-20; new file paragraph 7, file lines 21-23
