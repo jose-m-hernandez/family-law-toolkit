@@ -57,7 +57,6 @@ With the numbers above, the report reads:
 
     This report is arithmetic on the figures you entered. It is not legal advice.
 
-
 You enter net disposable income yourself. This version does not work it out from deductions (FC 4059).
 
 For help working out the figures for your own case, you can ask a lawyer, your court's self-help center, or its family law facilitator.
