@@ -1,6 +1,6 @@
 # family-law-toolkit
 
-Tools for people preparing California family-law paperwork. Today: a guideline child-support calculator (steps 1 and 2: the support amount, and its allocation per child), a command that compares two files' text, a counter of months that have five of a chosen weekday, and two optional PDF tools: one renders chosen pages of a PDF to PNG images, one renders Markdown tables to a PDF. Not built yet: assembling exhibit packets and binders.
+Tools for people preparing California family-law paperwork. Today: a guideline child-support calculator (steps 1 and 2: the support amount, and its allocation per child), a command that compares two files' text, a counter of months that have five of a chosen weekday, a calendar that numbers the weeks of a month, and two optional PDF tools: one renders chosen pages of a PDF to PNG images, one renders Markdown tables to a PDF. Not built yet: assembling exhibit packets and binders.
 
 Educational; not legal advice; not certified for court filing; consult counsel.
 
@@ -12,7 +12,7 @@ private and not yet published.
 
 ## Running it
 
-Needs Python 3.9 or later and nothing else to install, for every command except the optional PDF tools under `pdf/`, which list what they need below. CI runs the tests on 3.9 and on the latest 3.x. The fifth-week counter is the one other exception: it is JavaScript, it needs Node.js (CI uses Node 26), and it needs nothing else to install.
+Needs Python 3.9 or later and nothing else to install, for every command except the optional PDF tools under `pdf/`, which list what they need below. CI runs the tests on 3.9 and on the latest 3.x. The fifth-week counter and the week calendar are the other exceptions: both are JavaScript, they need Node.js (CI uses Node 26), and they need nothing else to install.
 
 Run it from the repository root, the folder that contains `family_law_toolkit/`:
 
@@ -125,6 +125,60 @@ What it prints, and when it stops:
 - A run that cannot go ahead writes a message naming the problem and the usage to standard error, writes nothing to standard output, and exits with status 1. That covers: no weekday, a weekday or name it does not recognise, both `--anchor` and `--weekday`, a year or range outside the rules above, a flag with no value, a flag given twice, a word that is not a flag, and a flag it does not know.
 - Its `--help` names the file `nth-week.js`, so from the repository root give the path `js/nth-week.js`.
 
+## Numbering the weeks of a month
+
+A schedule or an order might say that something happens in "the second week" of the month, or in weeks 1 and 3. Which dates those are depends on which week counts as week 1. In April 2031, counted from the first week that contains a Thursday, week 2 runs Sunday 6 April to Saturday 12 April; counted from the first week that contains a Monday, it runs Sunday 13 April to Saturday 19 April. An order may or may not say which weekday it counts from, so this command lets you see the weeks for the weekday you choose.
+
+It numbers the weeks of one month from the weekday you choose, lists each week's dates, and can also print the dates of chosen weekdays in every week and the month as a grid. It does not read an order, decide which weekday an order counts from, or say who has which day. Weeks run Sunday to Saturday only.
+
+Choosing the weekday and the month:
+
+- `--anchor` with one weekday name is required (for example `Thursday` or `Thu`, in any case). Week 1 is the week, Sunday to Saturday, that contains the month's first one of that weekday; week 2 contains the second, and so on. A month has as many numbered weeks as it has of that weekday, 4 or 5, which matches the "fifth week" of the counter above.
+- The year and the month come first, in that order: the year is a whole number from 1583 to 9999, and the month is a whole number from 1 (January) to 12 (December), so `4` and `04` both mean April. Flags may come before or after them.
+- Spaces around a value or a list item are ignored; a tab or line break is an error.
+- Each flag is given once.
+
+Choosing what else to print:
+
+- `--day` takes weekday names, comma-separated (for example `Monday,Saturday`), and prints that weekday's date in every week. Each weekday is printed once, Sunday first, whatever order you gave them in. A Saturday and Sunday weekend falls in two weeks here, because the Sunday starts the next week.
+- `--grid` adds the month as a grid, one row per week, with each week's number on the row that starts it.
+
+Days of the month before week 1 and after the last week belong to no numbered week; they are listed at the end of the output.
+
+Run it from the repository root. It is JavaScript, so it runs with `node`, not `python3`:
+
+    node js/week-calendar.js 2031 4 --anchor Thursday --grid
+
+It prints:
+
+    Weeks of April 2031, numbered from the first week that contains a Thursday
+    Each week runs Sunday to Saturday.
+
+    Week 1: Sun Mar 30 2031 - Sat Apr 05 2031
+    Week 2: Sun Apr 06 2031 - Sat Apr 12 2031
+    Week 3: Sun Apr 13 2031 - Sat Apr 19 2031
+    Week 4: Sun Apr 20 2031 - Sat Apr 26 2031
+
+    April 2031 has 4 Thursdays, so it has 4 numbered weeks.
+    Days of April 2031 before week 1: none.
+    Days of April 2031 after week 4: Sun Apr 27 2031 - Wed Apr 30 2031.
+
+    April 2031
+           Sun Mon Tue Wed Thu Fri Sat
+    Week 1           1   2   3   4   5
+    Week 2   6   7   8   9  10  11  12
+    Week 3  13  14  15  16  17  18  19
+    Week 4  20  21  22  23  24  25  26
+            27  28  29  30
+
+Dates are calendar dates, and they print the same on a computer in any time zone.
+
+What it prints, and when it stops:
+
+- Every run first writes the line `Educational; not legal advice; not certified for court filing; consult counsel.` to standard error.
+- A run that cannot go ahead writes a message naming the problem and the usage to standard error, writes nothing to standard output, and exits with status 1. That covers: no year or month, a year or month outside the rules above, no weekday, a weekday name it does not recognise (for `--anchor` or in a `--day` list), a flag with no value, a flag given twice, a third word, and a flag it does not know.
+- Its `--help` names the file `week-calendar.js`, so from the repository root give the path `js/week-calendar.js`.
+
 ## PDF tools (optional)
 
 Both tools are optional. page-render needs pypdf and poppler's `pdftoppm`, `pdfinfo` and `pdftotext`. md-table-pdf needs reportlab and pypdf to run, needs poppler only for its tests, and runs on macOS only. Install pypdf and reportlab at the versions in `pdf/requirements.txt` with `python3 -m pip install -r pdf/requirements.txt`. The poppler tools are expected at `/opt/homebrew/bin` (on a Mac with Homebrew: `brew install poppler`).
@@ -153,7 +207,7 @@ Run the tests:
 
     python3 -m unittest discover -s tests -t . -v
 
-The fifth-week counter's tests run on Node's built-in test runner:
+The tests of the two JavaScript tools (the fifth-week counter and the week calendar) run on Node's built-in test runner:
 
     node --test --test-reporter=tap "js/**/*.test.js"
 

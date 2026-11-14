@@ -6,7 +6,7 @@ task here.
 
 ## Status
 
-Early development, and not ready for other people to use. Three commands ship, and two optional PDF tools.
+Early development, and not ready for other people to use. Four commands ship, and two optional PDF tools.
 The first is `python3 -m family_law_toolkit.support`. It takes five required
 inputs (`--a-ndi`, `--b-ndi`, `--a-time-percent`, `--children`,
 `--minimum-wage-hourly`) and one optional input
@@ -32,6 +32,15 @@ are a fifth occurrence of the weekday, a count for each year, and a summary.
 It writes the label "Educational; not legal advice; not certified for court
 filing; consult counsel." to standard error first, on every run. Give `--anchor` or `--weekday`, not both; bad input prints a message and exits 1 with no results. It counts
 calendar dates only and does not say what any schedule, order or week number
+means for the person's case. The fourth is `node js/week-calendar.js`
+(JavaScript; it needs Node.js). It takes the required year, month and
+`--anchor` weekday, and the optional `--day` and `--grid`, and prints the
+Sunday-to-Saturday weeks of that month, numbered from the first week that
+contains the anchor weekday, with each week's dates, the days of the month
+before week 1 and after the last week, the dates of the `--day` weekdays, and
+a grid if asked. It writes the same label to standard error first, on every
+run; bad input prints a message and exits 1 with no results. It numbers
+calendar weeks only and does not say what any schedule, order or week number
 means for the person's case. `python3 pdf/page-render/page_render.py` renders chosen
 pages of a PDF to PNG images and writes a manifest and an HTML contact sheet. It
 needs pypdf and poppler. `python3 pdf/md-table-pdf/md_table_pdf.py` renders
