@@ -15,17 +15,26 @@
  *
  * Defaults
  * - Start year: current year
- * - End year: start year + 18
- * - Anchor weekday: none; --anchor or --weekday is required
- * - Output includes: all 5th-occurence dates, per-year counts, and a summary
+ * - End year: start year + 18 (so with --start 2031 alone, 2031 to 2049)
+ * - Anchor weekday: none; --anchor or --weekday is required, not both
+ * - Output includes: all 5th-occurrence dates, per-year counts, and a summary
+ *
+ * Input rules (a run that breaks one prints a message and the usage to stderr, prints nothing to
+ * stdout, and exits 1)
+ * - Years are whole numbers from 1583 to 9999 (the Gregorian calendar), start <= end, and at
+ *   most 1000 years in the range.
+ * - --weekday takes whole numbers 0 to 6, comma-separated; --anchor takes weekday names.
+ * - Every flag that takes a value needs one; an unknown flag is an error.
+ * - A weekday given twice is counted once. Each weekday in a list is counted separately.
+ * - Dates are calendar dates, printed the same in every time zone.
  *
  * CLI
  * - --start <year>         Start year (inclusive). Default: current year
  * - --end <year>           End year (inclusive). Default: start + 18
  * - --weekday <0-6|csv>   Anchor weekday ordinal(s). 0=Sun ... 6=Sat. Example: --weekday 2,3
  * - --anchor <names>      Anchor weekday name(s). Example: --anchor Tuesday or --anchor Tuesday,Wednesday
- * - --list                Print each date that represents the 5th occurrence (on by default)
- * - --per-year            Print a yearly count summary (on by default)
+ * - --list                Accepted; dates are always printed
+ * - --per-year            Accepted; per-year counts are always printed
  * - -h, --help            Show usage help
  *
  * Usage Examples
@@ -140,7 +149,21 @@ function tallyFifthWeeks(
  * @returns {string}
  */
 function helpText() {
-  return `\nUsage: node nth-week.js (--anchor <names> | --weekday <0-6|csv>) [--start <year>] [--end <year>] [--list]\n\nOptions:\n  --anchor    Anchor weekday name(s), for example Tuesday (this or --weekday is required)\n  --weekday   Weekday ordinal 0=Sun ... 6=Sat or CSV of ordinals (this or --anchor is required)\n  --start     Start year (default: current year)\n  --end       End year inclusive (default: start + 18)\n  --list      Print each 5th-occurrence date found (verbose)\n  -h, --help  Show this help\n`;
+  return `
+Usage: node nth-week.js (--anchor <names> | --weekday <0-6|csv>) [--start <year>] [--end <year>] [--list] [--per-year]
+
+Options:
+  --anchor    Anchor weekday name(s), for example Tuesday or Tuesday,Wed (this or --weekday is required, not both)
+  --weekday   Weekday number 0=Sun ... 6=Sat, or a comma-separated list (this or --anchor is required, not both)
+  --start     Start year (default: current year)
+  --end       End year, inclusive (default: start + 18)
+  --list      Accepted; each 5th-occurrence date is always printed
+  --per-year  Accepted; the count for each year is always printed
+  -h, --help  Show this help
+
+Years are whole numbers from 1583 to 9999 (Gregorian calendar), start no later than end, at most 1000 years.
+Each weekday in a list is counted separately. Dates are calendar dates, the same in every time zone.
+`;
 }
 
 /**
@@ -153,6 +176,114 @@ function printHelp() {
 const LABEL = 'Educational; not legal advice; not certified for court filing; consult counsel.';
 const MISSING =
   'nth-week: the anchor weekday is required; give --anchor <name> (for example, --anchor Tuesday) or --weekday <0-6>.';
+
+const MIN_YEAR = 1583;
+const MAX_YEAR = 9999;
+const MAX_SPAN = 1000;
+const DEFAULT_SPAN = 18;
+const FLAGS_WITH_VALUE = ['--start', '--end', '--weekday', '--anchor'];
+const FLAGS_ALWAYS_ON = ['--list', '--per-year'];
+
+/**
+ * Read a year given on the command line: four digits, in the Gregorian range.
+ * @param {string} flag
+ * @param {string} text
+ * @returns {{ value?: number, error?: string }}
+ */
+function parseYear(flag, text) {
+  const t = text.trim();
+  const value = /^[0-9]{4}$/.test(t) ? Number(t) : NaN;
+  if (!(value >= MIN_YEAR && value <= MAX_YEAR)) {
+    return {
+      error: `nth-week: ${flag} must be a whole year from ${MIN_YEAR} to ${MAX_YEAR} (Gregorian calendar); got ${JSON.stringify(text)}.`,
+    };
+  }
+  return { value };
+}
+
+/**
+ * Parse the command-line arguments. Returns an error message, or the settings to run with.
+ * @param {string[]} args Arguments after the script path.
+ * @param {number} currentYear
+ * @returns {{ error: string } | { start: number, end: number, weekdays: number[] }}
+ */
+function parseArgs(args, currentYear) {
+  const given = {};
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (FLAGS_ALWAYS_ON.includes(a)) continue;
+    if (!FLAGS_WITH_VALUE.includes(a)) {
+      return { error: `nth-week: unknown argument ${JSON.stringify(a)}.` };
+    }
+    if (Object.hasOwn(given, a)) return { error: `nth-week: ${a} is given more than once.` };
+    const v = args[i + 1];
+    if (v === undefined || v.startsWith('--')) {
+      return { error: `nth-week: ${a} needs a value.` };
+    }
+    given[a] = v;
+    i++;
+  }
+
+  if (Object.hasOwn(given, '--anchor') && Object.hasOwn(given, '--weekday')) {
+    return { error: 'nth-week: give --anchor or --weekday, not both; use one.' };
+  }
+
+  let start = currentYear;
+  if (Object.hasOwn(given, '--start')) {
+    const r = parseYear('--start', given['--start']);
+    if (r.error) return r;
+    start = r.value;
+  }
+  let end = start + DEFAULT_SPAN;
+  if (Object.hasOwn(given, '--end')) {
+    const r = parseYear('--end', given['--end']);
+    if (r.error) return r;
+    end = r.value;
+  } else if (end > MAX_YEAR) {
+    return {
+      error: `nth-week: the default end year (start + ${DEFAULT_SPAN}) is ${end}, past ${MAX_YEAR}; give --end.`,
+    };
+  }
+  if (start > end) {
+    return { error: `nth-week: --start ${start} is after --end ${end}.` };
+  }
+  if (end - start + 1 > MAX_SPAN) {
+    return {
+      error: `nth-week: the range ${start} to ${end} is ${end - start + 1} years; at most ${MAX_SPAN} years.`,
+    };
+  }
+
+  let weekdays = [];
+  if (Object.hasOwn(given, '--weekday')) {
+    const bad = [];
+    for (const item of given['--weekday'].split(',')) {
+      const t = item.trim();
+      if (/^[0-6]$/.test(t)) weekdays.push(Number(t));
+      else bad.push(item);
+    }
+    if (bad.length > 0) {
+      return {
+        error: `nth-week: --weekday takes whole numbers 0 (Sunday) to 6 (Saturday), comma-separated; got ${bad.map((b) => JSON.stringify(b)).join(', ')} in ${JSON.stringify(given['--weekday'])}.`,
+      };
+    }
+  } else if (Object.hasOwn(given, '--anchor')) {
+    const bad = [];
+    for (const item of given['--anchor'].split(',')) {
+      const key = item.trim().toLowerCase();
+      if (Object.hasOwn(nameToOrdinal, key)) weekdays.push(nameToOrdinal[key]);
+      else bad.push(item);
+    }
+    if (bad.length > 0) {
+      return {
+        error: `nth-week: unknown weekday name ${bad.map((b) => JSON.stringify(b)).join(', ')} in --anchor ${JSON.stringify(given['--anchor'])}; use names like Tuesday or Tue.`,
+      };
+    }
+  }
+  weekdays = weekdays.filter((wd, i) => weekdays.indexOf(wd) === i);
+  if (weekdays.length === 0) return { error: MISSING };
+
+  return { start, end, weekdays };
+}
 
 /**
  * Run the counter as a program. Writes the label as the first line of stderr on every run.
@@ -170,49 +301,27 @@ function runCli() {
     process.exit(0);
   }
 
-  let start = new Date().getFullYear();
-  let end = start + 18;
-  let weekdays = [];
-  let verboseDates = true;
-  let perYear = true;
-  for (let i = 0; i < args.length; i++) {
-    const a = args[i];
-    if (a === '--start') start = Number(args[++i]);
-    else if (a === '--end') end = Number(args[++i]);
-    else if (a === '--weekday') {
-      const val = args[++i];
-      weekdays = val
-        .split(',')
-        .map((n) => Number(n.trim()))
-        .filter((n) => !Number.isNaN(n));
-    } else if (a === '--list') verboseDates = true;
-    else if (a === '--per-year') perYear = true;
-  }
-
-  // Backward-compat: allow --anchor as name(s)
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--anchor') {
-      const v = (args[++i] || '').split(',').map((s) => s.trim().toLowerCase());
-      const ords = v.map((n) => nameToOrdinal[n]).filter((v) => v !== undefined);
-      if (ords.length > 0) weekdays = ords;
-    }
-  }
-
-  if (weekdays.length === 0) {
-    console.error(MISSING);
+  const parsed = parseArgs(args, new Date().getFullYear());
+  if ('error' in parsed) {
+    console.error(parsed.error);
     // A refused run keeps stdout empty: the usage goes to stderr
     console.error(helpText());
     process.exit(1);
   }
+  const { start, end, weekdays } = parsed;
+  const verboseDates = true;
+  const perYear = true;
 
   console.log(
     `\n5th week counter (weeks numbered from the first week that contains the anchor weekday)`
   );
   console.log(`Range: ${start}–${end}`);
   const humanList = weekdays.map((wd) => weekdayNames[wd]).join(' and ');
-  console.log(
-    `Definition: Week 1 is the first week that contains a ${weekdays.length > 1 ? humanList : humanList}. A month has a "5th week" if it contains 5 such ${weekdays.length > 1 ? 'anchor days' : 'anchor day'} in that month.`
-  );
+  const rule =
+    weekdays.length > 1
+      ? `A month has a "5th week" if it contains 5 of the same one of those days; each weekday is counted separately.`
+      : `A month has a "5th week" if it contains 5 ${humanList}s.`;
+  console.log(`Definition: Week 1 is the first week that contains a ${humanList}. ${rule}`);
   console.log('Showing dates and per-year summary.');
 
   weekdays.forEach((wd) => {
@@ -232,8 +341,12 @@ function runCli() {
       const mid = Math.floor(arr.length / 2);
       return arr.length % 2 ? arr[mid] : (arr[mid - 1] + arr[mid]) / 2;
     })();
-    const minPerYear = Math.min(...Object.values(perYearCounts));
-    const maxPerYear = Math.max(...Object.values(perYearCounts));
+    let minPerYear = Infinity;
+    let maxPerYear = -Infinity;
+    for (const c of Object.values(perYearCounts)) {
+      if (c < minPerYear) minPerYear = c;
+      if (c > maxPerYear) maxPerYear = c;
+    }
 
     console.log(
       `${name} (${wd}) → Months with a 5th week (first week contains ${name}): ${total} (between ${start} and ${end}).`
@@ -255,4 +368,5 @@ module.exports = {
   computeMonthsWithFifth,
   listFifthOccurrenceDates,
   tallyFifthWeeks,
+  parseArgs,
 };

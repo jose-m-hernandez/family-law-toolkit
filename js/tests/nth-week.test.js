@@ -113,20 +113,114 @@ describe('nth-week CLI', () => {
     assert.strictEqual(result.stderr, LABEL + '\n');
   });
 
-  for (const [name, args] of [
-    ['no anchor at all', ['--start', '2031', '--end', '2031']],
-    ['an unknown anchor name', ['--anchor', 'Funday', '--start', '2031', '--end', '2031']],
-  ]) {
-    test(`a run with no anchor weekday fails: ${name}`, () => {
+  test('a run with no anchor weekday fails', () => {
+    const result = run(['--start', '2031', '--end', '2031']);
+    const lines = result.stderr.split('\n');
+    assert.strictEqual(result.status, 1);
+    assert.strictEqual(result.stdout, '');
+    assert.strictEqual(lines[0], LABEL);
+    assert.strictEqual(lines[1], MISSING);
+    assert.ok(result.stderr.includes('Usage: node nth-week.js'));
+  });
+
+  // Each bad input: [description, args, text the message line must contain]
+  const BAD = [
+    ['--weekday 9', ['--weekday', '9'], '--weekday takes whole numbers 0'],
+    ['--weekday -1', ['--weekday', '-1'], '"-1"'],
+    ['--weekday 2.5', ['--weekday', '2.5'], '"2.5"'],
+    ['--weekday empty', ['--weekday', ''], '--weekday takes'],
+    ['--weekday 0x2', ['--weekday', '0x2'], '"0x2"'],
+    ['--weekday 02', ['--weekday', '02'], '"02"'],
+    ['--weekday list with a bad item', ['--weekday', '2,9,3'], '"9"'],
+    ['--weekday trailing comma', ['--weekday', '2,'], '--weekday takes'],
+    ['--weekday letters', ['--weekday', 'abc'], '"abc"'],
+    ['unknown anchor name', ['--anchor', 'Funday'], '"Funday"'],
+    ['unknown name in a list', ['--anchor', 'Tuesday,Funday,Wed'], '"Funday"'],
+    ['prototype key constructor', ['--anchor', 'constructor'], '"constructor"'],
+    ['prototype key toString', ['--anchor', 'toString'], '"toString"'],
+    ['prototype key __proto__', ['--anchor', '__proto__'], '"__proto__"'],
+    ['anchor and weekday together', ['--anchor', 'Tuesday', '--weekday', '3'], 'not both; use one'],
+    ['start not a number', ['--anchor', 'Tue', '--start', 'abc'], '--start must be a whole year from 1583 to 9999 (Gregorian calendar); got "abc"'],
+    ['start fractional', ['--anchor', 'Tue', '--start', '2031.5'], '"2031.5"'],
+    ['start 0x7e0', ['--anchor', 'Tue', '--start', '0x7e0'], '"0x7e0"'],
+    ['start 1582', ['--anchor', 'Tue', '--start', '1582', '--end', '1590'], '"1582"'],
+    ['start 99', ['--anchor', 'Tue', '--start', '99', '--end', '2000'], '"99"'],
+    ['start negative', ['--anchor', 'Tue', '--start', '-5'], '"-5"'],
+    ['end 10000', ['--anchor', 'Tue', '--start', '2031', '--end', '10000'], '--end must be a whole year from 1583 to 9999'],
+    ['end 200000', ['--anchor', 'Tue', '--start', '2031', '--end', '200000'], '"200000"'],
+    ['end Infinity', ['--anchor', 'Tue', '--end', 'Infinity'], '"Infinity"'],
+    ['reversed range', ['--anchor', 'Tue', '--start', '2040', '--end', '2031'], '--start 2040 is after --end 2031'],
+    ['range over 1000 years', ['--anchor', 'Tue', '--start', '1583', '--end', '2583'], 'is 1001 years; at most 1000 years'],
+    ['default end past 9999', ['--anchor', 'Tue', '--start', '9990'], 'default end year (start + 18) is 10008'],
+    ['--weekday with no value at the end', ['--weekday'], '--weekday needs a value'],
+    ['--anchor with no value at the end', ['--anchor'], '--anchor needs a value'],
+    ['--start with no value at the end', ['--anchor', 'Tue', '--start'], '--start needs a value'],
+    ['--end with no value at the end', ['--anchor', 'Tue', '--end'], '--end needs a value'],
+    ['--weekday followed by a flag', ['--weekday', '--start', '2031'], '--weekday needs a value'],
+    ['--start followed by a flag', ['--anchor', 'Tue', '--start', '--end', '2031'], '--start needs a value'],
+    ['unknown flag', ['--anchor', 'Tue', '--bogus', '1'], '"--bogus"'],
+    ['stray word', ['--anchor', 'Tue', 'Tuesday'], '"Tuesday"'],
+    ['a flag given twice', ['--anchor', 'Tue', '--start', '2031', '--start', '2032'], '--start is given more than once'],
+  ];
+  for (const [name, args, text] of BAD) {
+    test(`bad input fails with a message: ${name}`, () => {
       const result = run(args);
       const lines = result.stderr.split('\n');
       assert.strictEqual(result.status, 1);
       assert.strictEqual(result.stdout, '');
       assert.strictEqual(lines[0], LABEL);
-      assert.strictEqual(lines[1], MISSING);
+      assert.ok(lines[1].startsWith('nth-week: '), lines[1]);
+      assert.ok(lines[1].includes(text), lines[1]);
       assert.ok(result.stderr.includes('Usage: node nth-week.js'));
+      assert.ok(!result.stderr.includes('    at '), 'no stack trace');
     });
   }
+
+  test('the years 1583 and 9999 and a 1000-year range are accepted', () => {
+    assert.strictEqual(run(['--anchor', 'Tue', '--start', '1583', '--end', '1583']).status, 0);
+    assert.strictEqual(run(['--anchor', 'Tue', '--start', '9999', '--end', '9999']).status, 0);
+    assert.strictEqual(run(['--anchor', 'Tue', '--start', '1583', '--end', '2582']).status, 0);
+    assert.strictEqual(run(['--anchor', 'Tue', '--start', '9981']).status, 0);
+  });
+
+  test('--start alone ends 18 years later', () => {
+    const result = run(['--anchor', 'Tuesday', '--start', '2031']);
+    assert.strictEqual(result.status, 0);
+    assert.ok(result.stdout.includes('Range: 2031–2049\n'));
+    assert.ok(result.stdout.includes('years=19,'));
+    assert.ok(result.stdout.includes('Year 2049: '));
+    assert.ok(!result.stdout.includes('Year 2050: '));
+  });
+
+  test('with no years given the range is this year and 18 years after it', () => {
+    const year = new Date().getFullYear();
+    const result = run(['--anchor', 'Tuesday']);
+    assert.ok(result.stdout.includes(`Range: ${year}–${year + 18}\n`));
+  });
+
+  test('a repeated weekday is counted once', () => {
+    const once = run(['--anchor', 'Tuesday', '--start', '2031', '--end', '2031']);
+    const twice = run(['--anchor', 'Tue,tuesday,TUES', '--start', '2031', '--end', '2031']);
+    assert.strictEqual(twice.stdout, once.stdout);
+    const nums = run(['--weekday', '2,2', '--start', '2031', '--end', '2031']);
+    assert.strictEqual(nums.stdout, once.stdout);
+  });
+
+  test('--list and --per-year are accepted and change nothing', () => {
+    const base = run(['--anchor', 'Tuesday', '--start', '2031', '--end', '2031']);
+    const flagged = run(['--anchor', 'Tuesday', '--list', '--per-year', '--start', '2031', '--end', '2031']);
+    assert.strictEqual(flagged.status, 0);
+    assert.strictEqual(flagged.stdout, base.stdout);
+  });
+
+  test('--help lists every flag the program accepts', () => {
+    const out = run(['--help']).stdout;
+    for (const flag of ['--anchor', '--weekday', '--start', '--end', '--list', '--per-year', '--help', '-h']) {
+      assert.ok(out.includes(flag), flag);
+    }
+    assert.ok(out.includes('start + 18'));
+    assert.ok(out.includes('1583 to 9999'));
+  });
 
   test('the heading names what the counter does', () => {
     const result = run(['--anchor', 'Tuesday', '--start', '2031', '--end', '2031']);
