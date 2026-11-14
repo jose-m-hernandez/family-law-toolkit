@@ -9,7 +9,7 @@ const {
   listFifthOccurrenceDates,
   tallyFifthWeeks,
 } = require('../nth-week');
-const { formatDate } = require('../utils/date');
+const { formatDate, weekdayNames, nameToOrdinal } = require('../utils/date');
 const { describe, test } = require('node:test');
 const assert = require('node:assert');
 
@@ -234,5 +234,145 @@ describe('nth-week CLI', () => {
     const byOrdinal = run(['--weekday', '2', '--start', '2031', '--end', '2031']);
     assert.strictEqual(byOrdinal.status, 0);
     assert.strictEqual(byOrdinal.stdout, byName.stdout);
+  });
+});
+
+describe('nth-week output', () => {
+  const run = (args) =>
+    spawnSync(process.execPath, [path.join(__dirname, '..', 'nth-week.js'), ...args], {
+      encoding: 'utf8',
+    });
+
+  // Every accepted name and abbreviation, with the weekday number it must mean.
+  const NAMES = {
+    sunday: 0, sun: 0,
+    monday: 1, mon: 1,
+    tuesday: 2, tue: 2, tues: 2,
+    wednesday: 3, wed: 3,
+    thursday: 4, thu: 4, thurs: 4,
+    friday: 5, fri: 5,
+    saturday: 6, sat: 6,
+  };
+  const PRINTED = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+  test('the weekday tables hold exactly the expected names', () => {
+    assert.deepStrictEqual(weekdayNames, PRINTED);
+    assert.deepStrictEqual(nameToOrdinal, NAMES);
+  });
+
+  for (const [name, num] of Object.entries(NAMES)) {
+    test(`--anchor ${name} is weekday ${num}, printed as ${PRINTED[num]}`, () => {
+      const result = run(['--anchor', name, '--start', '2031', '--end', '2031']);
+      assert.strictEqual(result.status, 0);
+      assert.ok(result.stdout.includes(`\n${PRINTED[num]} (${num}) → `), result.stdout);
+      const upper = run(['--anchor', name.toUpperCase(), '--start', '2031', '--end', '2031']);
+      assert.strictEqual(upper.stdout, result.stdout);
+    });
+  }
+
+  for (let n = 0; n < 7; n++) {
+    test(`--weekday ${n} is printed as ${PRINTED[n]}`, () => {
+      const result = run(['--weekday', String(n), '--start', '2031', '--end', '2031']);
+      assert.strictEqual(result.status, 0);
+      assert.ok(result.stdout.includes(`\n${PRINTED[n]} (${n}) → `), result.stdout);
+    });
+  }
+
+  test('an even-length range: per-year lines, Range line, total, average and median', () => {
+    // Sundays: five months in 2028, four in 2029, so the median is 4.5.
+    const result = run(['--anchor', 'Sunday', '--start', '2028', '--end', '2029']);
+    assert.strictEqual(result.status, 0);
+    assert.strictEqual(
+      result.stdout,
+      [
+        '',
+        '5th week counter (weeks numbered from the first week that contains the anchor weekday)',
+        'Range: 2028–2029',
+        'Definition: Week 1 is the first week that contains a Sunday. A month has a "5th week" if it contains 5 Sundays.',
+        'Showing dates and per-year summary.',
+        '2028-01-30',
+        '2028-04-30',
+        '2028-07-30',
+        '2028-10-29',
+        '2028-12-31',
+        'Year 2028: 5 months',
+        '2029-04-29',
+        '2029-07-29',
+        '2029-09-30',
+        '2029-12-30',
+        'Year 2029: 4 months',
+        'Sunday (0) → Months with a 5th week (first week contains Sunday): 9 (between 2028 and 2029).',
+        'Summary for Sunday: total months=9, years=2, avg/year=4.50, median/year=4.5, min/year=4, max/year=5',
+        '',
+      ].join('\n')
+    );
+  });
+
+  test('an odd-length range: the middle year is the median', () => {
+    // Saturdays: 5, 4, 4 months in 2028 to 2030.
+    const result = run(['--anchor', 'Saturday', '--start', '2028', '--end', '2030']);
+    assert.ok(result.stdout.includes('Year 2028: 5 months\n'));
+    assert.ok(result.stdout.includes('Year 2029: 4 months\n'));
+    assert.ok(result.stdout.includes('Year 2030: 4 months\n'));
+    assert.ok(
+      result.stdout.includes(
+        'Summary for Saturday: total months=13, years=3, avg/year=4.33, median/year=4, min/year=4, max/year=5'
+      )
+    );
+  });
+
+  test('--end sets the last year; --start and --end can be the same year', () => {
+    const result = run(['--anchor', 'Saturday', '--start', '2029', '--end', '2029']);
+    assert.ok(result.stdout.includes('Range: 2029–2029\n'));
+    assert.ok(result.stdout.includes('years=1,'));
+    assert.ok(!result.stdout.includes('Year 2030'));
+    const wider = run(['--anchor', 'Saturday', '--start', '2029', '--end', '2030']);
+    assert.ok(wider.stdout.includes('Year 2030: 4 months\n'));
+    assert.ok(wider.stdout.includes('years=2,'));
+  });
+
+  test('two weekdays: both blocks, in the order given, each counted separately', () => {
+    const result = run(['--anchor', 'Wednesday,Tuesday', '--start', '2030', '--end', '2031']);
+    assert.strictEqual(result.status, 0);
+    const out = result.stdout;
+    assert.ok(
+      out.includes(
+        'Definition: Week 1 is the first week that contains a Wednesday and Tuesday. A month has a "5th week" if it contains 5 of the same one of those days; each weekday is counted separately.\n'
+      )
+    );
+    const wed = out.indexOf('Wednesday (3) → ');
+    const tue = out.indexOf('Tuesday (2) → ');
+    assert.ok(wed > 0 && tue > wed, 'Wednesday block comes first, then Tuesday');
+    // Wednesday dates come before the Wednesday total line; Tuesday's before its own.
+    for (const d of ['2030-01-30', '2030-05-29', '2030-07-31', '2030-10-30', '2031-12-31']) {
+      const at = out.indexOf(d);
+      assert.ok(at > 0 && at < wed, d);
+    }
+    for (const d of ['2030-01-29', '2030-04-30', '2031-04-29', '2031-12-30']) {
+      const at = out.lastIndexOf(d);
+      assert.ok(at > wed && at < tue, d);
+    }
+    assert.ok(
+      out.includes(
+        'Summary for Wednesday: total months=9, years=2, avg/year=4.50, median/year=4.5, min/year=4, max/year=5\n'
+      )
+    );
+    assert.ok(
+      out.includes(
+        'Summary for Tuesday: total months=9, years=2, avg/year=4.50, median/year=4.5, min/year=4, max/year=5\n'
+      )
+    );
+    assert.strictEqual(out.split('Year 2030: ').length - 1, 2);
+    assert.ok(out.includes('Wednesday (3) → Months with a 5th week (first week contains Wednesday): 9 (between 2030 and 2031).'));
+    assert.ok(out.includes('Tuesday (2) → Months with a 5th week (first week contains Tuesday): 9 (between 2030 and 2031).'));
+  });
+
+  test('one weekday gets the singular definition, several get the separate-count wording', () => {
+    const one = run(['--anchor', 'Tuesday', '--start', '2031', '--end', '2031']).stdout;
+    assert.ok(one.includes('contains a Tuesday. A month has a "5th week" if it contains 5 Tuesdays.\n'));
+    assert.ok(!one.includes('counted separately'));
+    const many = run(['--weekday', '2,3', '--start', '2031', '--end', '2031']).stdout;
+    assert.ok(many.includes('counted separately'));
+    assert.ok(many.includes('contains a Tuesday and Wednesday.'));
   });
 });
