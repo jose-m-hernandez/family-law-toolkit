@@ -35,85 +35,90 @@ Applying the largest FC 4055(b)(7) reduction to the amount for each number of ch
 
 ## S1
 
-Inputs: A 6919.09, B 2255.71, A's time 35 percent, 2 children, same time-sharing arrangement (yes). Hourly minimum wage 21.00.
+Inputs: A 9500.00, B 3500.00, A's time 15 percent, 3 children, same time-sharing arrangement (yes). Hourly minimum wage 21.00.
 
 1. TN (FC 4055(b)(1)(E)):
 
-    python3 -I -c "$P; x=F('6919.09')+F('2255.71'); print(x, D(x*100), ('-' if x<0 else '')+'%d.%02d'%divmod((abs(x)*100+F(1,2))//1,100))"
-    -> 45874/5 917480 9174.80
+    python3 -I -c "$P; x=F('9500.00')+F('3500.00'); print(x, D(x*100), ('-' if x<0 else '')+'%d.%02d'%divmod((abs(x)*100+F(1,2))//1,100))"
+    -> 13000 1300000 13000.00
 
 2. High earner (FC 4055(b)(1)(C), (D)): A is the high earner when A's NDI is at least B's.
 
-    python3 -I -c "$P; print(F('6919.09')>=F('2255.71'))"
+    python3 -I -c "$P; print(F('9500.00')>=F('3500.00'))"
     -> True
 
-   So HN = A = 6919.09 and H% = A's time = 35 (FC 4055(b)(1)(D)).
+   So HN = A = 9500.00 and H% = A's time = 15 (FC 4055(b)(1)(D)).
 
-3. Row (FC 4055(b)(3), R3): TN 9174.80 selects row 3.
+3. Row (FC 4055(b)(3), R3): TN 13000.00 selects row 4.
 
    Row fraction (FC 4055(b)(3)):
 
-    python3 -I -c "$P; x=F('1')/4; print(x, D(x*100))"
-    -> 1/4 25
+    python3 -I -c "$P; x=F('0.10')+F('1499')/F('13000'); print(x, D(x*100))"
+    -> 2799/13000 21.5307692307692307692307692308
 
-4. K (FC 4055(b)(3)): H% 35 is at most 50, so 1 + H%.
+4. K (FC 4055(b)(3)): H% 15 is at most 50, so 1 + H%.
 
-    python3 -I -c "$P; x=(1+F('35')/100)*(F('1')/4); print(x, D(x*100))"
-    -> 27/80 33.75
+    python3 -I -c "$P; x=(1+F('15')/100)*(F('0.10')+F('1499')/F('13000')); print(x, D(x*100))"
+    -> 64377/260000 24.7603846153846153846153846154
 
-   K = 0.337500 (rounded to 6 decimals, half-up).
+   K = 0.247604 (rounded to 6 decimals, half-up).
 
 5. CS (FC 4055(a)): high earner is A.
 
-    python3 -I -c "$P; x=(1+F('35')/100)*(F('1')/4)*(F('6919.09')-F('35')/100*F('45874/5')); print(x, D(x*100), ('-' if x<0 else '')+'%d.%02d'%divmod((abs(x)*100+F(1,2))//1,100))"
-    -> 10011357/8000 125141.9625 1251.42
+    python3 -I -c "$P; x=(1+F('15')/100)*(F('0.10')+F('1499')/F('13000'))*(F('9500.00')-F('15')/100*F('13000')); print(x, D(x*100), ('-' if x<0 else '')+'%d.%02d'%divmod((abs(x)*100+F(1,2))//1,100))"
+    -> 9720927/5200 186940.903846153846153846153846 1869.41
 
-   CS formula = 1251.42.
+   CS formula = 1869.41.
 
-6. Multiplier (FC 4055(b)(4)): 2 children = 1.6. Total for 2 children:
+6. Multiplier (FC 4055(b)(4)): 3 children = 2. Total for 3 children:
 
-    python3 -I -c "$P; x=F('1.6')*F('10011357/8000'); print(x, D(x*100), ('-' if x<0 else '')+'%d.%02d'%divmod((abs(x)*100+F(1,2))//1,100))"
-    -> 10011357/5000 200227.14 2002.27
+    python3 -I -c "$P; x=F('2')*F('9720927/5200'); print(x, D(x*100), ('-' if x<0 else '')+'%d.%02d'%divmod((abs(x)*100+F(1,2))//1,100))"
+    -> 9720927/2600 373881.807692307692307692307692 3738.82
 
-   Total = 2002.27.
+   Total = 3738.82.
 
-7. Sign (FC 4055(b)(5)): positive, so the high earner A pays the lower earner B. Payer A, support 2002.27 (the absolute value of the total).
+7. Sign (FC 4055(b)(5)): positive, so the high earner A pays the lower earner B. Payer A, support 3738.82 (the absolute value of the total).
 
 8. Low-income (FC 4055(b)(7), R1, R2): threshold:
 
     python3 -I -c "$P; x=F('21.00')*40*52/12; print(x, D(x*100), ('-' if x<0 else '')+'%d.%02d'%divmod((abs(x)*100+F(1,2))//1,100))"
     -> 3640 364000 3640.00
 
-   Payer A NDI 6919.09, strictly less than the threshold (FC 4055(b)(7)):
+   Payer A NDI 9500.00, strictly less than the threshold (FC 4055(b)(7)):
 
-    python3 -I -c "$P; print(F('6919.09')<F(3640))"
+    python3 -I -c "$P; print(F('9500.00')<F(3640))"
     -> False
 
-   Not applicable. Maximum reduction 0.00; range (FC 4055(c)) 2002.27 to 2002.27.
+   Not applicable. Maximum reduction 0.00; range (FC 4055(c)) 3738.82 to 3738.82.
 
 ### S1: allocation under FC 4055(b)(8)
 
 - Amount for 1 child (FC 4055(b)(8), (b)(4) multiplier 1):
 
-    python3 -I -c "$P; x=F('1')*F('10011357/8000'); print(x, D(x*100), ('-' if x<0 else '')+'%d.%02d'%divmod((abs(x)*100+F(1,2))//1,100))"
-    -> 10011357/8000 125141.9625 1251.42
+    python3 -I -c "$P; x=F('1')*F('9720927/5200'); print(x, D(x*100), ('-' if x<0 else '')+'%d.%02d'%divmod((abs(x)*100+F(1,2))//1,100))"
+    -> 9720927/5200 186940.903846153846153846153846 1869.41
 
 - Amount for 2 children (FC 4055(b)(8), (b)(4) multiplier 1.6):
 
-    python3 -I -c "$P; x=F('1.6')*F('10011357/8000'); print(x, D(x*100), ('-' if x<0 else '')+'%d.%02d'%divmod((abs(x)*100+F(1,2))//1,100))"
-    -> 10011357/5000 200227.14 2002.27
+    python3 -I -c "$P; x=F('1.6')*F('9720927/5200'); print(x, D(x*100), ('-' if x<0 else '')+'%d.%02d'%divmod((abs(x)*100+F(1,2))//1,100))"
+    -> 9720927/3250 299105.446153846153846153846154 2991.05
+
+- Amount for 3 children (FC 4055(b)(8), (b)(4) multiplier 2):
+
+    python3 -I -c "$P; x=F('2')*F('9720927/5200'); print(x, D(x*100), ('-' if x<0 else '')+'%d.%02d'%divmod((abs(x)*100+F(1,2))//1,100))"
+    -> 9720927/2600 373881.807692307692307692307692 3738.82
 
 - Per-child amounts (FC 4055(b)(8)), youngest first, differences of the displayed amounts (R8, R9):
 
-    python3 -I -c "from decimal import Decimal as Dm; print([Dm('1251.42')]+[Dm(y)-Dm(x) for x,y in zip(['1251.42'],['2002.27'])])"
-    -> [Decimal('1251.42'), Decimal('750.85')]
+    python3 -I -c "from decimal import Decimal as Dm; print([Dm('1869.41')]+[Dm(y)-Dm(x) for x,y in zip(['1869.41', '2991.05'],['2991.05', '3738.82'])])"
+    -> [Decimal('1869.41'), Decimal('1121.64'), Decimal('747.77')]
 
 - Sum against the shown support (FC 4055(b)(8)):
 
-    python3 -I -c "from decimal import Decimal as Dm; print(sum([Dm('1251.42'), Dm('750.85')]))"
-    -> 2002.27, equal to the shown 2002.27.
+    python3 -I -c "from decimal import Decimal as Dm; print(sum([Dm('1869.41'), Dm('1121.64'), Dm('747.77')]))"
+    -> 3738.82, equal to the shown 3738.82.
 
-Rounding guard: 6 rounded money values in this case; the closest to a half-cent is 0.36 of a cent-times-100 unit away (limit 0.01).
+Rounding guard: 7 rounded money values in this case; the closest to a half-cent is 0.0538 of a cent-times-100 unit away (limit 0.01).
 
 ## S2
 

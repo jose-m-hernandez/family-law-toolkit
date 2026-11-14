@@ -155,7 +155,7 @@ RANGE_RE = re.compile(r"^  Support range \(FC 4055\(c\)\): (\d+\.\d\d) to (\d+\.
 SUPPORT_RE = re.compile(r"^  Support amount \(FC 4055\(a\), \(b\)\(4\)\): (\d+\.\d\d)$")
 
 # Money inputs of S1 and S4 (invented), reused for the 2-10 children sweeps.
-S1_MONEY = ("6919.09", "2255.71", "35")
+S1_MONEY = ("9500.00", "3500.00", "15")
 S4_MONEY = ("2258.50", "612.53", "45")
 
 
@@ -293,10 +293,10 @@ class ReportTests(unittest.TestCase):
 
     def test_cli_value_errors_name_the_flag_typed(self):
         base = {
-            "--a-ndi": "6919.09",
-            "--b-ndi": "2255.71",
-            "--a-time-percent": "35",
-            "--children": "2",
+            "--a-ndi": "9500.00",
+            "--b-ndi": "3500.00",
+            "--a-time-percent": "15",
+            "--children": "3",
             "--minimum-wage-hourly": "21.00",
         }
         prefix = "python3 -m family_law_toolkit.support: error: "
@@ -388,11 +388,11 @@ class ReportTests(unittest.TestCase):
             "Parent A and Parent B are labels for the two parents. Use the same"
             " labels for every input.",
             "Write AMOUNT and PERCENT as plain numbers with at most two decimals,"
-            " such as 6919.09: no commas, no dollar sign. PERCENT is from 0 to"
+            " such as 9500.00: no commas, no dollar sign. PERCENT is from 0 to"
             " 100. COUNT is a whole number from 1 to 10.",
             "Example, with invented numbers:",
-            "python3 -m family_law_toolkit.support --a-ndi 6919.09 --b-ndi 2255.71"
-            " --a-time-percent 35 --children 2 --minimum-wage-hourly 21.00",
+            "python3 -m family_law_toolkit.support --a-ndi 9500.00 --b-ndi 3500.00"
+            " --a-time-percent 15 --children 3 --minimum-wage-hourly 21.00",
         )
         for piece in expected:
             with self.subTest(piece=piece[:40]):
@@ -1041,7 +1041,7 @@ class AllocationReportTests(unittest.TestCase):
         self.assertTrue(any(c > 0 for c in groups["bottom"]["per_child"]))
         self.assertEqual(lines_of(text).count(C7_LINE), 1)
         # (c) no zero anywhere: S1 and S4 have no C7.
-        for money_inputs, children in ((S1_MONEY, 2), (S4_MONEY, 3)):
+        for money_inputs, children in ((S1_MONEY, 3), (S4_MONEY, 3)):
             text = render_for(*money_inputs, children, "yes")
             self.assertNotIn(C7_LINE, lines_of(text))
             self.assertTrue(all(c > 0 for g in end_groups(text).values() for c in g["per_child"]))

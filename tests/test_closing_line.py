@@ -20,8 +20,8 @@ FIRST = (
 )
 FLAG = "--same-time-sharing-arrangement"
 README_ARGS = (
-    "--a-ndi", "6919.09", "--b-ndi", "2255.71", "--a-time-percent", "35",
-    "--children", "2", "--minimum-wage-hourly", "21.00",
+    "--a-ndi", "9500.00", "--b-ndi", "3500.00", "--a-time-percent", "15",
+    "--children", "3", "--minimum-wage-hourly", "21.00",
 )
 LIA_ARGS = (
     "--a-ndi", "3000.00", "--b-ndi", "500.00", "--a-time-percent", "25",
@@ -37,16 +37,16 @@ FIVE_CHILDREN_ARGS = (
 )
 VARIANTS = {
     "one child": (README_ARGS[:7] + ("1",) + README_ARGS[8:]),
-    "two children, no flag": README_ARGS,
-    "two children, flag yes (allocation)": README_ARGS + (FLAG, "yes"),
-    "two children, flag no": README_ARGS + (FLAG, "no"),
+    "three children, no flag": README_ARGS,
+    "three children, flag yes (allocation)": README_ARGS + (FLAG, "yes"),
+    "three children, flag no": README_ARGS + (FLAG, "no"),
     "low-income adjustment, flag yes (allocation at both ends)": LIA_ARGS + (FLAG, "yes"),
     "low-income adjustment, no flag": LIA_ARGS,
     "a share per child, shares differ": (
-        README_ARGS[:6] + ("--a-time-percent", "40") + README_ARGS[6:]
+        README_ARGS[:6] + ("--a-time-percent", "40", "--a-time-percent", "15") + README_ARGS[6:]
     ),
     "a share per child, shares equal, flag yes": (
-        README_ARGS[:6] + ("--a-time-percent", "35") + README_ARGS[6:] + (FLAG, "yes")
+        README_ARGS[:6] + ("--a-time-percent", "15", "--a-time-percent", "15") + README_ARGS[6:] + (FLAG, "yes")
     ),
     "no paying parent, flag yes": ZERO_ARGS + (FLAG, "yes"),
     "five children, flag yes (two pages)": FIVE_CHILDREN_ARGS + (FLAG, "yes"),
@@ -83,7 +83,7 @@ class ClosingLineTests(unittest.TestCase):
                 self.assertEqual(done.stdout.split("\n")[0], FIRST)
 
     def test_render_report_ends_with_the_closing_line(self):
-        result = guideline.compute("6919.09", "2255.71", "35", 2, "21.00", "yes")
+        result = guideline.compute("9500.00", "3500.00", "15", 3, "21.00", "yes")
         text = render_report(result)
         self.assertTrue(text.endswith("\n\n" + CLOSING))
         self.assertEqual(text.count(CLOSING), 1)

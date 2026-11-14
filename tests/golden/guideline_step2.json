@@ -17,13 +17,13 @@
   ],
   "cases": [
     {"id": "S1",
-     "inputs": {"a_ndi": "6919.09", "b_ndi": "2255.71", "a_time_percent": "35", "children": 2, "minimum_wage_hourly": "21.00", "same_time_sharing_arrangement": "yes"},
-     "expected": {"tn": "9174.80", "high_earner": "A", "h_percent": "35", "k_row": 3, "k": "0.337500",
-                  "cs_formula": "1251.42", "multiplier": "1.6", "cs_total": "2002.27",
-                  "payer": "A", "support": "2002.27",
-                  "lia": {"threshold": "3640.00", "applies": false, "max_reduction": "0.00", "range_low": "2002.27", "range_high": "2002.27"},
+     "inputs": {"a_ndi": "9500.00", "b_ndi": "3500.00", "a_time_percent": "15", "children": 3, "minimum_wage_hourly": "21.00", "same_time_sharing_arrangement": "yes"},
+     "expected": {"tn": "13000.00", "high_earner": "A", "h_percent": "15", "k_row": 4, "k": "0.247604",
+                  "cs_formula": "1869.41", "multiplier": "2", "cs_total": "3738.82",
+                  "payer": "A", "support": "3738.82",
+                  "lia": {"threshold": "3640.00", "applies": false, "max_reduction": "0.00", "range_low": "3738.82", "range_high": "3738.82"},
                   "allocation": {
-      "top": {"cumulative": ["1251.42", "2002.27"], "per_child": ["1251.42", "750.85"]}
+      "top": {"cumulative": ["1869.41", "2991.05", "3738.82"], "per_child": ["1869.41", "1121.64", "747.77"]}
                   }}},
     {"id": "S2",
      "inputs": {"a_ndi": "8208.09", "b_ndi": "5127.40", "a_time_percent": "65", "children": 3, "minimum_wage_hourly": "21.00", "same_time_sharing_arrangement": "yes"},

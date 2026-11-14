@@ -48,3 +48,4 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The compare tests' fixture T2 uses another pair of invented times, and the matching example in the compare spec uses the same pair. Neither command's behaviour changes.
 - The text of the compare spec (`docs/specs/compare-drafts.md`) no longer carries internal cross-references, and the README's sample report is followed by one blank line instead of two. No command behaves differently.
 - The README's line on what to install now says the optional PDF tools under `pdf/` are the exception and list what they need; the core commands still need only Python 3.9 or later.
+- The calculator's example cases S1 (also the example in the README and in `--help`) and G2 now have three children and new invented figures, with their expected results worked out again by hand.
