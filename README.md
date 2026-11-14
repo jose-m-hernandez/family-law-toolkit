@@ -102,8 +102,6 @@ It lists 2031-04-29, 2031-07-29, 2031-09-30 and 2031-12-30.
 
 Every run first writes the line `Educational; not legal advice; not certified for court filing; consult counsel.` to standard error. A run with no anchor writes a message and the usage to standard error, writes nothing to standard output, and exits with status 1. Its `--help` names the file `nth-week.js`, so from the repository root give the path `js/nth-week.js`.
 
-Dates are calculated in the computer's time zone and printed as UTC dates, so on a computer set to a time zone east of UTC they can print a day early.
-
 ## Licence
 
 Copyright © 2026 Jose Miguel Hernandez. Licensed under the GNU Affero General Public License v3.0 or later (see [LICENSE](LICENSE)). A commercial licence is also available from the copyright holder.

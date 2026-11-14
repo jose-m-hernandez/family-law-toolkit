@@ -9,6 +9,7 @@ const {
   listFifthOccurrenceDates,
   tallyFifthWeeks,
 } = require('../nth-week');
+const { formatDate } = require('../utils/date');
 const { describe, test } = require('node:test');
 const assert = require('node:assert');
 
@@ -22,7 +23,7 @@ describe('nth-week helpers', () => {
     // April 2031 has Tuesdays on 1,8,15,22,29 → 5th on 29th
     const d = getFifthOccurrenceDate(2031, 3, 2);
     assert.notStrictEqual(d, null);
-    assert.strictEqual(d.toISOString().substring(0, 10), '2031-04-29');
+    assert.strictEqual(formatDate(d), '2031-04-29');
   });
 
   test('getFifthOccurrenceDate returns null when there is no 5th occurrence', () => {
@@ -52,6 +53,33 @@ describe('nth-week helpers', () => {
   test('tallyFifthWeeks sums across range', () => {
     const total = tallyFifthWeeks(2031, 2033, 2, { verboseDates: false, perYear: false });
     assert.strictEqual(total, 12); // 4 per year for Tuesdays in 2031-2033
+  });
+});
+
+describe('dates do not depend on the time zone', () => {
+  test('formatDate zero-pads month and day', () => {
+    assert.strictEqual(formatDate(new Date(Date.UTC(2031, 0, 5))), '2031-01-05');
+    assert.strictEqual(formatDate(new Date(Date.UTC(2031, 11, 30))), '2031-12-30');
+  });
+
+  test('a date that local time would skip (Samoa, 2011-12-30) is still listed', () => {
+    const { datesByYear } = listFifthOccurrenceDates(2011, 2011, 5);
+    assert.ok(datesByYear[2011].includes('2011-12-30'));
+  });
+
+  test('the tool prints the same output under two different TZ values', () => {
+    const args = ['--anchor', 'Tuesday,Friday', '--start', '2031', '--end', '2033'];
+    const outputs = ['Pacific/Kiritimati', 'America/Los_Angeles', 'Europe/London'].map(
+      (tz) =>
+        spawnSync(process.execPath, [path.join(__dirname, '..', 'nth-week.js'), ...args], {
+          encoding: 'utf8',
+          env: { ...process.env, TZ: tz },
+        })
+    );
+    for (const r of outputs) assert.strictEqual(r.status, 0);
+    assert.ok(outputs[0].stdout.includes('2031-04-29'));
+    assert.strictEqual(outputs[1].stdout, outputs[0].stdout);
+    assert.strictEqual(outputs[2].stdout, outputs[0].stdout);
   });
 });
 

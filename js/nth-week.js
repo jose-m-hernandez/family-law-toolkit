@@ -37,6 +37,7 @@
 
 const {
   daysInMonth,
+  formatDate,
   getFifthOccurrenceDate,
   weekdayNames,
   nameToOrdinal,
@@ -57,7 +58,7 @@ function listFifthOccurrenceDates(startYear, endYear, weekdayOrdinal) {
     for (let m = 0; m < 12; m++) {
       const d = getFifthOccurrenceDate(y, m, weekdayOrdinal);
       if (d) {
-        arr.push(d.toISOString().substring(0, 10));
+        arr.push(formatDate(d));
         total++;
       }
     }
@@ -104,7 +105,7 @@ function findFifthWeeks(year, startDayOrdinal, options = { verboseDates: false, 
   for (let month = 0; month < 12; month++) {
     const d = getFifthOccurrenceDate(year, month, startDayOrdinal);
     if (d) {
-      if (options.verboseDates) console.log(d.toISOString().substring(0, 10));
+      if (options.verboseDates) console.log(formatDate(d));
       count++;
     }
   }
@@ -249,6 +250,7 @@ if (require.main === module) {
 
 module.exports = {
   daysInMonth,
+  formatDate,
   getFifthOccurrenceDate,
   computeMonthsWithFifth,
   listFifthOccurrenceDates,
