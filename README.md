@@ -1,6 +1,6 @@
 # family-law-toolkit
 
-Tools for people preparing California family-law paperwork. Today: a guideline child-support calculator (steps 1 and 2: the support amount, and its allocation per child), a command that compares two files' text, and a counter of months that have five of a chosen weekday. Not built yet: assembling exhibit packets and binders.
+Tools for people preparing California family-law paperwork. Today: a guideline child-support calculator (steps 1 and 2: the support amount, and its allocation per child), a command that compares two files' text, a counter of months that have five of a chosen weekday, and two optional PDF tools: one renders chosen pages of a PDF to PNG images, one renders Markdown tables to a PDF. Not built yet: assembling exhibit packets and binders.
 
 Educational; not legal advice; not certified for court filing; consult counsel.
 
@@ -12,7 +12,7 @@ private and not yet published.
 
 ## Running it
 
-Needs Python 3.9 or later and nothing else to install. CI runs the tests on 3.9 and on the latest 3.x. The fifth-week counter is the one exception: it is JavaScript, it needs Node.js (CI uses Node 26), and it needs nothing else to install.
+Needs Python 3.9 or later and nothing else to install, for every command except the optional PDF tools under `pdf/`, which list what they need below. CI runs the tests on 3.9 and on the latest 3.x. The fifth-week counter is the one other exception: it is JavaScript, it needs Node.js (CI uses Node 26), and it needs nothing else to install.
 
 Run it from the repository root, the folder that contains `family_law_toolkit/`:
 
@@ -125,6 +125,24 @@ What it prints, and when it stops:
 - A run that cannot go ahead writes a message naming the problem and the usage to standard error, writes nothing to standard output, and exits with status 1. That covers: no weekday, a weekday or name it does not recognise, both `--anchor` and `--weekday`, a year or range outside the rules above, a flag with no value, a flag given twice, a word that is not a flag, and a flag it does not know.
 - Its `--help` names the file `nth-week.js`, so from the repository root give the path `js/nth-week.js`.
 
+## PDF tools (optional)
+
+Both tools are optional. They need pypdf and reportlab at the versions in `pdf/requirements.txt` (install them with `python3 -m pip install -r pdf/requirements.txt`), and poppler's `pdftoppm`, `pdfinfo` and `pdftotext`, which they expect at `/opt/homebrew/bin` (on a Mac with Homebrew: `brew install poppler`).
+
+page-render renders chosen pages of an image-only PDF to PNG images, so they can be read and cited. Run it from the repository root:
+
+    python3 pdf/page-render/page_render.py notes/scan.pdf --pages 1-3 -o notes/pages
+
+The file names are invented. It writes one PNG per page, named by the source page, plus `manifest.tsv` and `contact_sheet.html`. The environment variables `PAGE_RENDER_PDFTOPPM`, `PAGE_RENDER_PDFINFO` and `PAGE_RENDER_PDFTOTEXT` can point it at other copies of the poppler tools. Its exit codes and checks are in `pdf/page-render/README.md`.
+
+md-table-pdf renders Markdown pipe tables (with optional headings and paragraphs) to a landscape US Letter PDF:
+
+    python3 pdf/md-table-pdf/md_table_pdf.py notes/table.md -o notes/table.pdf
+
+md-table-pdf runs on macOS only: it needs the Arial font that macOS keeps in /System/Library/Fonts/Supplemental, and on other systems it stops with exit status 5. Its exit codes and checks are in `pdf/md-table-pdf/README.md`.
+
+Neither tool says what a page or table means for your case.
+
 ## Licence
 
 Copyright © 2026 Jose Miguel Hernandez. Licensed under the GNU Affero General Public License v3.0 or later (see [LICENSE](LICENSE)). A commercial licence is also available from the copyright holder.
@@ -140,6 +158,12 @@ The fifth-week counter's tests run on Node's built-in test runner:
     node --test --test-reporter=tap "js/**/*.test.js"
 
 They have been run on Node 22, 24 and 26 and need Node 22 or later (the quotes matter: Node reads the pattern itself, so it finds every test file under `js/`).
+
+The PDF tools' tests need the optional software above and run with:
+
+    python3 pdf/run_tests.py
+
+CI runs them on macOS in the `pdf-tests` job.
 
 The tests use invented data.
 
