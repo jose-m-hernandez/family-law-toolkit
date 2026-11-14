@@ -127,7 +127,7 @@ What it prints, and when it stops:
 
 ## Numbering the weeks of a month
 
-A schedule or an order might say that something happens in "the second week" of the month, or in weeks 1 and 3. Which dates those are depends on which week counts as week 1. In April 2031, counted from the first week that contains a Thursday, week 2 runs Sunday 6 April to Saturday 12 April; counted from the first week that contains a Monday, it runs Sunday 13 April to Saturday 19 April. An order may or may not say which weekday it counts from, so this command lets you see the weeks for the weekday you choose.
+A schedule or an order might say that something happens in "the second week" of the month, or in weeks 1 and 3. Which dates those are depends on which week counts as week 1. In April 2031, counted from the first week that contains a Thursday, week 2 runs Sunday 6 April to Saturday 12 April. An order may or may not say which weekday it counts from, so this command lets you see the weeks for the weekday you choose.
 
 It numbers the weeks of one month from the weekday you choose, lists each week's dates, and can also print the dates of chosen weekdays in every week and the month as a grid. It does not read an order, decide which weekday an order counts from, or say who has which day. Weeks run Sunday to Saturday only.
 
