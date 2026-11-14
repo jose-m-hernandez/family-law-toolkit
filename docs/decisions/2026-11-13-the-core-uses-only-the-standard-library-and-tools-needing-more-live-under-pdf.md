@@ -4,7 +4,7 @@ Date: 2026-11-13
 
 ## The rule
 
-> **The core (`family_law_toolkit/`, `ci/`, `tests/`, `js/`) uses only the standard library of its language. A tool that needs third-party software lives under `pdf/` (or a like-named optional folder), lists exact versions in that folder's `requirements.txt`, keeps its tests inside that folder, and has its own CI job; the core's jobs never install anything.**
+> **The core (`family_law_toolkit/`, `ci/`, `tests/`, `js/`) uses only the standard library of its language. A tool that needs third-party software lives under `pdf/` (or a like-named optional folder), lists exact versions in that folder's `requirements.txt`, keeps its tests inside that folder, and has its own CI job; the core's jobs install no third-party packages (they do set up Python and Node).**
 
 ## Why
 

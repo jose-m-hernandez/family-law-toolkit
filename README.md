@@ -127,7 +127,7 @@ What it prints, and when it stops:
 
 ## PDF tools (optional)
 
-Both tools are optional. They need pypdf and reportlab at the versions in `pdf/requirements.txt` (install them with `python3 -m pip install -r pdf/requirements.txt`), and poppler's `pdftoppm`, `pdfinfo` and `pdftotext`, which they expect at `/opt/homebrew/bin` (on a Mac with Homebrew: `brew install poppler`).
+Both tools are optional. page-render needs pypdf and poppler's `pdftoppm`, `pdfinfo` and `pdftotext`. md-table-pdf needs reportlab and pypdf to run, needs poppler only for its tests, and runs on macOS only. Install pypdf and reportlab at the versions in `pdf/requirements.txt` with `python3 -m pip install -r pdf/requirements.txt`. The poppler tools are expected at `/opt/homebrew/bin` (on a Mac with Homebrew: `brew install poppler`).
 
 page-render renders chosen pages of an image-only PDF to PNG images, so they can be read and cited. Run it from the repository root:
 
