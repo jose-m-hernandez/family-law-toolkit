@@ -92,9 +92,9 @@ For help with what a difference means for your own case, you can ask a lawyer, y
 
 This command counts the months, in a range of years, that contain five of a chosen weekday. It prints each date that is a fifth occurrence, a count for each year, and a summary.
 
-You must choose the weekday, with one of two flags, not both. Give `--anchor` with a weekday name (for example `Tuesday`, `Tue`, or `Tuesday,Wednesday`), or `--weekday` with a whole number from 0 to 6 (0 is Sunday, 1 is Monday, 2 is Tuesday, and so on), or a comma-separated list of them. A weekday given twice is counted once. With more than one weekday, each is counted separately: the output has one block of dates and one summary for each.
+You must choose the weekday, with one of two flags, not both. Give `--anchor` with a weekday name (for example `Tuesday`, `Tue`, or `Tuesday,Wednesday`), or `--weekday` with a whole number from 0 to 6 (0 is Sunday, 1 is Monday, 2 is Tuesday, and so on), or a comma-separated list of them. Spaces around a value or a list item are ignored; a tab or line break is an error. A weekday given twice is counted once. With more than one weekday, each is counted separately: the output has one block of dates and one summary for each.
 
-`--start` and `--end` are the first and last year. `--end` defaults to 18 years after `--start`, and `--start` defaults to this year, so with neither given the range is this year and the 18 years after it, and with `--start 2031` alone it is 2031 to 2049. Years must be whole numbers from 1583 to 9999 (the Gregorian calendar), `--start` must not be after `--end`, and the range can be at most 1000 years. `--list` and `--per-year` are accepted but change nothing: the dates and the count for each year are always printed.
+`--start` and `--end` are the first and last year. `--end` defaults to 18 years after `--start`, and `--start` defaults to this year, so with neither given the range is this year and the 18 years after it, and with `--start 2031` alone it is 2031 to 2049. Years must be whole numbers from 1583 to 9999 (Gregorian calendar; all dates use today's Gregorian rules, also for years before a country adopted it, which is called the proleptic Gregorian calendar), `--start` must not be after `--end`, and the range can be at most 1000 years. `--list` and `--per-year` are accepted but change nothing: the dates and the count for each year are always printed.
 
 Run it from the repository root. It is JavaScript, so it runs with `node`, not `python3`:
 
@@ -104,7 +104,7 @@ It lists 2031-04-29, 2031-07-29, 2031-09-30 and 2031-12-30.
 
 Dates are calendar dates, and they print the same on a computer in any time zone.
 
-Every run first writes the line `Educational; not legal advice; not certified for court filing; consult counsel.` to standard error. A run that cannot go ahead (no weekday, a weekday or name it does not recognise, both `--anchor` and `--weekday`, a year or range outside the rules above, a flag with no value, or a flag it does not know) writes a message naming the problem and the usage to standard error, writes nothing to standard output, and exits with status 1. Its `--help` names the file `nth-week.js`, so from the repository root give the path `js/nth-week.js`.
+Every run first writes the line `Educational; not legal advice; not certified for court filing; consult counsel.` to standard error. A run that cannot go ahead (no weekday, a weekday or name it does not recognise, both `--anchor` and `--weekday`, a year or range outside the rules above, a flag with no value, a flag given twice, a word that is not a flag, or a flag it does not know) writes a message naming the problem and the usage to standard error, writes nothing to standard output, and exits with status 1. Its `--help` names the file `nth-week.js`, so from the repository root give the path `js/nth-week.js`.
 
 ## Licence
 

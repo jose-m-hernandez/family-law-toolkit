@@ -27,10 +27,10 @@ so do not call the list complete; what a difference means for the
 person's case is for a lawyer, the court's self-help center, or the family law
 facilitator. The third is `node js/nth-week.js` (JavaScript; it needs Node.js).
 It takes a required anchor weekday (`--anchor Tuesday` or `--weekday 2`) and
-optional `--start` and `--end` years, and prints the dates in that range that
+optional `--start` and `--end` years (1583 to 9999), and prints the dates in that range that
 are a fifth occurrence of the weekday, a count for each year, and a summary.
 It writes the label "Educational; not legal advice; not certified for court
-filing; consult counsel." to standard error first, on every run. It counts
+filing; consult counsel." to standard error first, on every run. Give `--anchor` or `--weekday`, not both; bad input prints a message and exits 1 with no results. It counts
 calendar dates only and does not say what any schedule, order or week number
 means for the person's case. Nothing else ships. Assembling exhibit packets and binders
 does not exist yet. If the person asks you to do something this repository does
