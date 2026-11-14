@@ -6,7 +6,7 @@ task here.
 
 ## Status
 
-Early development, and not ready for other people to use. Three commands ship.
+Early development, and not ready for other people to use. Three commands ship, and two optional PDF tools.
 The first is `python3 -m family_law_toolkit.support`. It takes five required
 inputs (`--a-ndi`, `--b-ndi`, `--a-time-percent`, `--children`,
 `--minimum-wage-hourly`) and one optional input
@@ -32,7 +32,13 @@ are a fifth occurrence of the weekday, a count for each year, and a summary.
 It writes the label "Educational; not legal advice; not certified for court
 filing; consult counsel." to standard error first, on every run. Give `--anchor` or `--weekday`, not both; bad input prints a message and exits 1 with no results. It counts
 calendar dates only and does not say what any schedule, order or week number
-means for the person's case. Nothing else ships. Assembling exhibit packets and binders
+means for the person's case. `python3 pdf/page-render/page_render.py` renders chosen
+pages of a PDF to PNG images and writes a manifest and an HTML contact sheet. It
+needs pypdf and poppler. `python3 pdf/md-table-pdf/md_table_pdf.py` renders
+Markdown pipe tables to a landscape US Letter PDF. It needs reportlab and pypdf,
+and it runs on macOS only. Both exit 0 on success and with another status (2 to
+5) when they could not run or refused; say which. Neither says what a page or
+table means for the person's case. Nothing else ships. Assembling exhibit packets and binders
 does not exist yet. If the person asks you to do something this repository does
 not yet do, say so plainly instead of improvising it.
 
