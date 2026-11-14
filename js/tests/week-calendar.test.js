@@ -18,7 +18,7 @@ const assert = require('node:assert');
 const SCRIPT = path.join(__dirname, '..', 'week-calendar.js');
 const README = path.join(__dirname, '..', '..', 'README.md');
 
-// Whole outputs, written out by hand from a calendar (not produced by the tool).
+// Whole outputs, worked out independently of the tool from a separate calendar calculation.
 const HELP = lines([
   'Usage: node week-calendar.js <year> <month> --anchor <weekday> [--day <weekdays>] [--grid]',
   '',

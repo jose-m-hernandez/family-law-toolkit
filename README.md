@@ -134,7 +134,7 @@ It numbers the weeks of one month from the weekday you choose, lists each week's
 Choosing the weekday and the month:
 
 - `--anchor` with one weekday name is required (for example `Thursday` or `Thu`, in any case). Week 1 is the week, Sunday to Saturday, that contains the month's first one of that weekday; week 2 contains the second, and so on. A month has as many numbered weeks as it has of that weekday, 4 or 5, which matches the "fifth week" of the counter above.
-- The year and the month come first, in that order: the year is a whole number from 1583 to 9999, and the month is a whole number from 1 (January) to 12 (December), so `4` and `04` both mean April. Flags may come before or after them.
+- Give the year and then the month: the year is a whole number from 1583 to 9999, and the month is a whole number from 1 (January) to 12 (December), so `4` and `04` both mean April. Flags may come before or after them.
 - Spaces around a value or a list item are ignored; a tab or line break is an error.
 - Each flag is given once.
 
