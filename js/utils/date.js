@@ -57,6 +57,47 @@ function getFifthOccurrenceDate(year, monthIndex, weekdayOrdinal) {
   return getNthOccurrenceDate(year, monthIndex, weekdayOrdinal, 5);
 }
 
+const monthNames = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
+/**
+ * A new Date that is `days` calendar days after (or, if negative, before) `date`, in UTC.
+ * @param {Date} date
+ * @param {number} days
+ * @returns {Date}
+ */
+function addDays(date, days) {
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + days)
+  );
+}
+
+/**
+ * Print a Date made by these helpers as `Www Mmm DD YYYY` (for example `Thu Apr 03 2031`), from
+ * its calendar fields. The year has at least four digits; a later year prints in full.
+ * @param {Date} d
+ * @returns {string}
+ */
+function formatDayLong(d) {
+  const wd = weekdayNames[d.getUTCDay()].slice(0, 3);
+  const mon = monthNames[d.getUTCMonth()].slice(0, 3);
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  const y = String(d.getUTCFullYear()).padStart(4, '0');
+  return `${wd} ${mon} ${day} ${y}`;
+}
+
 module.exports = {
   // constants
   weekdayNames,
@@ -66,4 +107,8 @@ module.exports = {
   formatDate,
   getNthOccurrenceDate,
   getFifthOccurrenceDate,
+  // added for the week calendar
+  monthNames,
+  addDays,
+  formatDayLong,
 };
