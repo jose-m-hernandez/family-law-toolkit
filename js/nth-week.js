@@ -21,10 +21,13 @@
  *
  * Input rules (a run that breaks one prints a message and the usage to stderr, prints nothing to
  * stdout, and exits 1)
- * - Years are whole numbers from 1583 to 9999 (the Gregorian calendar), start <= end, and at
- *   most 1000 years in the range.
+ * - Years are whole numbers from 1583 to 9999, start <= end, and at most 1000 years in the range.
+ *   All dates use today's Gregorian calendar rules, also for years before a country adopted it
+ *   (the proleptic Gregorian calendar).
  * - --weekday takes whole numbers 0 to 6, comma-separated; --anchor takes weekday names.
- * - Every flag that takes a value needs one; an unknown flag is an error.
+ *   Spaces around a value or a list item are ignored; a tab or line break is an error.
+ * - Every flag that takes a value needs one, and takes it once; an unknown flag or a stray word
+ *   that is not a flag is an error.
  * - A weekday given twice is counted once. Each weekday in a list is counted separately.
  * - Dates are calendar dates, printed the same in every time zone.
  *
@@ -161,7 +164,9 @@ Options:
   --per-year  Accepted; the count for each year is always printed
   -h, --help  Show this help
 
-Years are whole numbers from 1583 to 9999 (Gregorian calendar), start no later than end, at most 1000 years.
+Years are whole numbers from 1583 to 9999, start no later than end, at most 1000 years.
+All dates use today's Gregorian calendar rules, also for years before a country adopted it (proleptic Gregorian).
+Spaces around a value or a list item are ignored.
 Each weekday in a list is counted separately. Dates are calendar dates, the same in every time zone.
 `;
 }
@@ -185,13 +190,22 @@ const FLAGS_WITH_VALUE = ['--start', '--end', '--weekday', '--anchor'];
 const FLAGS_ALWAYS_ON = ['--list', '--per-year'];
 
 /**
+ * Remove plain spaces from both ends. Tabs and line breaks are kept, so they fail the checks.
+ * @param {string} text
+ * @returns {string}
+ */
+function trimSpaces(text) {
+  return text.replace(/^ +| +$/g, '');
+}
+
+/**
  * Read a year given on the command line: four digits, in the Gregorian range.
  * @param {string} flag
  * @param {string} text
  * @returns {{ value?: number, error?: string }}
  */
 function parseYear(flag, text) {
-  const t = text.trim();
+  const t = trimSpaces(text);
   const value = /^[0-9]{4}$/.test(t) ? Number(t) : NaN;
   if (!(value >= MIN_YEAR && value <= MAX_YEAR)) {
     return {
@@ -257,7 +271,7 @@ function parseArgs(args, currentYear) {
   if (Object.hasOwn(given, '--weekday')) {
     const bad = [];
     for (const item of given['--weekday'].split(',')) {
-      const t = item.trim();
+      const t = trimSpaces(item);
       if (/^[0-6]$/.test(t)) weekdays.push(Number(t));
       else bad.push(item);
     }
@@ -269,7 +283,7 @@ function parseArgs(args, currentYear) {
   } else if (Object.hasOwn(given, '--anchor')) {
     const bad = [];
     for (const item of given['--anchor'].split(',')) {
-      const key = item.trim().toLowerCase();
+      const key = trimSpaces(item).toLowerCase();
       if (Object.hasOwn(nameToOrdinal, key)) weekdays.push(nameToOrdinal[key]);
       else bad.push(item);
     }
@@ -330,7 +344,7 @@ function runCli() {
   const humanList = weekdays.map((wd) => weekdayNames[wd]).join(' and ');
   const rule =
     weekdays.length > 1
-      ? `A month has a "5th week" if it contains 5 of the same one of those days; each weekday is counted separately.`
+      ? `A month has a "5th week" if it contains 5 of the same weekday; each weekday is counted separately.`
       : `A month has a "5th week" if it contains 5 ${humanList}s.`;
   console.log(`Definition: Week 1 is the first week that contains a ${humanList}. ${rule}`);
   console.log('Showing dates and per-year summary.');

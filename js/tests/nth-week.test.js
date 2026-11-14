@@ -72,6 +72,27 @@ describe('dates do not depend on the time zone', () => {
     assert.ok(datesByYear[2011].includes('2011-12-30'));
   });
 
+  // These run the tool in a child process with TZ set there, so they pin the promise under
+  // whatever zone the test run itself is in (CI runs in UTC).
+  const runInZone = (tz, args) =>
+    spawnSync(process.execPath, [path.join(__dirname, '..', 'nth-week.js'), ...args], {
+      encoding: 'utf8',
+      env: { ...process.env, TZ: tz },
+    });
+
+  test('Samoa: 2011-12-30 is printed by a run in Pacific/Apia', () => {
+    const r = runInZone('Pacific/Apia', ['--weekday', '5', '--start', '2011', '--end', '2011']);
+    assert.strictEqual(r.status, 0);
+    assert.ok(r.stdout.includes('2011-12-30\n'), r.stdout);
+  });
+
+  test('east of UTC: a run in Asia/Kolkata prints 2031-04-29 and not the day before', () => {
+    const r = runInZone('Asia/Kolkata', ['--weekday', '2', '--start', '2031', '--end', '2031']);
+    assert.strictEqual(r.status, 0);
+    assert.ok(r.stdout.includes('2031-04-29\n'), r.stdout);
+    assert.ok(!r.stdout.includes('2031-04-28'), r.stdout);
+  });
+
   test('the tool prints the same output under two different TZ values', () => {
     const args = ['--anchor', 'Tuesday,Friday', '--start', '2031', '--end', '2033'];
     const outputs = ['Pacific/Kiritimati', 'America/Los_Angeles', 'Europe/London'].map(
@@ -131,6 +152,13 @@ describe('nth-week CLI', () => {
   // Each bad input: [description, args, text the message line must contain]
   const BAD = [
     ['--weekday 9', ['--weekday', '9'], '--weekday takes whole numbers 0'],
+    ['--weekday 7', ['--weekday', '7'], '"7"'],
+    ['--weekday with a tab in it', ['--weekday', '2\t'], '--weekday takes'],
+    ['--weekday with a newline between items', ['--weekday', '2,\n3'], '--weekday takes'],
+    ['--anchor with a tab in it', ['--anchor', 'Tue\t'], '--anchor'],
+    ['--start with a trailing newline', ['--anchor', 'Tue', '--start', '2031\n', '--end', '2031'], '--start must be a whole year'],
+    ['--start with a tab in it', ['--anchor', 'Tue', '--start', '20\t31', '--end', '2031'], '--start must be a whole year'],
+    ['--end with a leading newline', ['--anchor', 'Tue', '--start', '2031', '--end', '\n2031'], '--end must be a whole year'],
     ['--weekday -1', ['--weekday', '-1'], '"-1"'],
     ['--weekday 2.5', ['--weekday', '2.5'], '"2.5"'],
     ['--weekday empty', ['--weekday', ''], '--weekday takes'],
@@ -188,6 +216,24 @@ describe('nth-week CLI', () => {
     assert.strictEqual(run(['--anchor', 'Tue', '--start', '9981']).status, 0);
   });
 
+  test('spaces around a value or a list item are ignored', () => {
+    const plain = run(['--weekday', '2,3', '--start', '2031', '--end', '2033']);
+    const spaced = run(['--weekday', ' 2 , 3 ', '--start', ' 2031 ', '--end', ' 2033 ']);
+    assert.strictEqual(spaced.status, 0);
+    assert.strictEqual(spaced.stdout, plain.stdout);
+    const named = run(['--anchor', ' Tue , Wed ', '--start', '2031', '--end', '2033']);
+    assert.strictEqual(named.status, 0);
+    assert.strictEqual(named.stdout, plain.stdout);
+  });
+
+  test('-h prints the help to stdout and exits 0', () => {
+    const result = run(['-h']);
+    assert.strictEqual(result.status, 0);
+    assert.strictEqual(result.stderr.split('\n')[0], LABEL);
+    assert.ok(result.stdout.includes('Usage: node nth-week.js'));
+    assert.ok(result.stdout.includes('Spaces around a value'));
+  });
+
   test('--start alone ends 18 years later', () => {
     const result = run(['--anchor', 'Tuesday', '--start', '2031']);
     assert.strictEqual(result.status, 0);
@@ -198,9 +244,15 @@ describe('nth-week CLI', () => {
   });
 
   test('with no years given the range is this year and 18 years after it', () => {
-    const year = new Date().getFullYear();
+    // The run may straddle New Year's midnight: accept the year before or after the spawn.
+    const before = new Date().getFullYear();
     const result = run(['--anchor', 'Tuesday']);
-    assert.ok(result.stdout.includes(`Range: ${year}–${year + 18}\n`));
+    const after = new Date().getFullYear();
+    const m = /^Range: (\d{4})–(\d{4})$/m.exec(result.stdout);
+    assert.ok(m, result.stdout);
+    const [start, end] = [Number(m[1]), Number(m[2])];
+    assert.strictEqual(end, start + 18);
+    assert.ok(start >= before && start <= after, `${start} not in ${before}..${after}`);
   });
 
   test('a repeated weekday is counted once', () => {
@@ -225,6 +277,7 @@ describe('nth-week CLI', () => {
     }
     assert.ok(out.includes('start + 18'));
     assert.ok(out.includes('1583 to 9999'));
+    assert.ok(out.includes('proleptic Gregorian'));
   });
 
   test('the heading names what the counter does', () => {
@@ -362,7 +415,7 @@ describe('nth-week output', () => {
     const out = result.stdout;
     assert.ok(
       out.includes(
-        'Definition: Week 1 is the first week that contains a Wednesday and Tuesday. A month has a "5th week" if it contains 5 of the same one of those days; each weekday is counted separately.\n'
+        'Definition: Week 1 is the first week that contains a Wednesday and Tuesday. A month has a "5th week" if it contains 5 of the same weekday; each weekday is counted separately.\n'
       )
     );
     const wed = out.indexOf('Wednesday (3) → ');
@@ -397,7 +450,8 @@ describe('nth-week output', () => {
     assert.ok(one.includes('contains a Tuesday. A month has a "5th week" if it contains 5 Tuesdays.\n'));
     assert.ok(!one.includes('counted separately'));
     const many = run(['--weekday', '2,3', '--start', '2031', '--end', '2031']).stdout;
-    assert.ok(many.includes('counted separately'));
+    assert.ok(many.includes('5 of the same weekday; each weekday is counted separately.'));
+    assert.ok(!many.includes('same one of'));
     assert.ok(many.includes('contains a Tuesday and Wednesday.'));
   });
 });
