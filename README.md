@@ -16,7 +16,7 @@ Needs Python 3.9 or later and nothing else to install, for every command except 
 
 Run it from the repository root, the folder that contains `family_law_toolkit/`:
 
-    python3 -m family_law_toolkit.support --a-ndi 6919.09 --b-ndi 2255.71 --a-time-percent 35 --children 2 --minimum-wage-hourly 21.00
+    python3 -m family_law_toolkit.support --a-ndi 9500.00 --b-ndi 3500.00 --a-time-percent 15 --children 3 --minimum-wage-hourly 21.00
 
 The numbers are invented. It prints a text report to the terminal. Add `--help` to see what each flag means.
 
@@ -28,24 +28,24 @@ With the numbers above, the report reads:
     Amounts are monthly dollars, rounded to the nearest cent (halves round up).
 
     Inputs as given
-      Parent A net disposable income: 6919.09
-      Parent B net disposable income: 2255.71
-      Parent A's share of time: 35%
-      Number of children: 2
+      Parent A net disposable income: 9500.00
+      Parent B net disposable income: 3500.00
+      Parent A's share of time: 15%
+      Number of children: 3
       Hourly state minimum wage used (Lab. Code 1182.12): 21.00
 
     Formula
-      Total net disposable income, TN (FC 4055(b)(1)(E)): 9174.80
+      Total net disposable income, TN (FC 4055(b)(1)(E)): 13000.00
       High earner (FC 4055(b)(1)(C)): Parent A
-      High earner's share of time, H% (FC 4055(b)(1)(D)): 35%
-      K table row (FC 4055(b)(3)): 3
-      K (FC 4055(b)(3)): 0.337500
-      HN, the high earner's net disposable income: 6919.09
-      Formula result, CS = K[HN - (H%)(TN)] (FC 4055(a)): 1251.42
-      Children multiplier (FC 4055(b)(4)): 1.6
-      CS times multiplier (FC 4055(b)(4)): 2002.27
+      High earner's share of time, H% (FC 4055(b)(1)(D)): 15%
+      K table row (FC 4055(b)(3)): 4
+      K (FC 4055(b)(3)): 0.247604
+      HN, the high earner's net disposable income: 9500.00
+      Formula result, CS = K[HN - (H%)(TN)] (FC 4055(a)): 1869.41
+      Children multiplier (FC 4055(b)(4)): 2
+      CS times multiplier (FC 4055(b)(4)): 3738.82
       Paying parent (FC 4055(b)(5)): Parent A
-      Support amount (FC 4055(a), (b)(4)): 2002.27
+      Support amount (FC 4055(a), (b)(4)): 3738.82
 
     Low-income adjustment (FC 4055(b)(7); range under FC 4055(c))
       Threshold (FC 4055(b)(7)): 3640.00 = hourly minimum wage x 40 x 52 / 12

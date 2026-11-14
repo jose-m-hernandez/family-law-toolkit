@@ -45,7 +45,7 @@ Optional:
       It has an effect only with two or more children.
 
 Write AMOUNT and PERCENT as plain numbers with at most two decimals, such as
-6919.09: no commas, no dollar sign. PERCENT is from 0 to 100. COUNT is a whole
+9500.00: no commas, no dollar sign. PERCENT is from 0 to 100. COUNT is a whole
 number from 1 to 10.
 Net disposable income amounts are monthly dollars; the minimum wage is per
 hour.
@@ -62,7 +62,7 @@ For help working out the figures for your own case, you can ask a lawyer, your
 court's self-help center, or its family law facilitator.
 
 Example, with invented numbers:
-    python3 -m family_law_toolkit.support --a-ndi 6919.09 --b-ndi 2255.71 --a-time-percent 35 --children 2 --minimum-wage-hourly 21.00"""
+    python3 -m family_law_toolkit.support --a-ndi 9500.00 --b-ndi 3500.00 --a-time-percent 15 --children 3 --minimum-wage-hourly 21.00"""
 
 
 class _OneLineParser(argparse.ArgumentParser):
