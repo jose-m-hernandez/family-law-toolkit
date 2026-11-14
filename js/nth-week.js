@@ -286,6 +286,17 @@ function parseArgs(args, currentYear) {
 }
 
 /**
+ * Median of a list of numbers (the mean of the two middle ones when the length is even).
+ * @param {number[]} values
+ * @returns {number}
+ */
+function median(values) {
+  const arr = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(arr.length / 2);
+  return arr.length % 2 ? arr[mid] : (arr[mid - 1] + arr[mid]) / 2;
+}
+
+/**
  * Run the counter as a program. Writes the label as the first line of stderr on every run.
  */
 function runCli() {
@@ -336,11 +347,7 @@ function runCli() {
     );
     const yearSpan = end - start + 1;
     const avgPerYear = distinctMonths / yearSpan;
-    const medianPerYear = (() => {
-      const arr = Object.values(perYearCounts).sort((a, b) => a - b);
-      const mid = Math.floor(arr.length / 2);
-      return arr.length % 2 ? arr[mid] : (arr[mid - 1] + arr[mid]) / 2;
-    })();
+    const medianPerYear = median(Object.values(perYearCounts));
     let minPerYear = Infinity;
     let maxPerYear = -Infinity;
     for (const c of Object.values(perYearCounts)) {
@@ -369,4 +376,5 @@ module.exports = {
   listFifthOccurrenceDates,
   tallyFifthWeeks,
   parseArgs,
+  median,
 };

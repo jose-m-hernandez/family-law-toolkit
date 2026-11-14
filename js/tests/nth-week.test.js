@@ -8,6 +8,7 @@ const {
   computeMonthsWithFifth,
   listFifthOccurrenceDates,
   tallyFifthWeeks,
+  median,
 } = require('../nth-week');
 const { formatDate, weekdayNames, nameToOrdinal } = require('../utils/date');
 const { describe, test } = require('node:test');
@@ -60,6 +61,10 @@ describe('dates do not depend on the time zone', () => {
   test('formatDate zero-pads month and day', () => {
     assert.strictEqual(formatDate(new Date(Date.UTC(2031, 0, 5))), '2031-01-05');
     assert.strictEqual(formatDate(new Date(Date.UTC(2031, 11, 30))), '2031-12-30');
+  });
+
+  test('formatDate pads the year to four digits', () => {
+    assert.strictEqual(formatDate(new Date(Date.UTC(999, 8, 9))), '0999-09-09');
   });
 
   test('a date that local time would skip (Samoa, 2011-12-30) is still listed', () => {
@@ -234,6 +239,26 @@ describe('nth-week CLI', () => {
     const byOrdinal = run(['--weekday', '2', '--start', '2031', '--end', '2031']);
     assert.strictEqual(byOrdinal.status, 0);
     assert.strictEqual(byOrdinal.stdout, byName.stdout);
+  });
+});
+
+describe('median', () => {
+  test('odd length: the middle value, whatever the order', () => {
+    assert.strictEqual(median([5, 4, 5]), 5);
+    assert.strictEqual(median([4, 5, 5, 4, 5]), 5);
+    assert.strictEqual(median([7]), 7);
+  });
+
+  test('even length: the mean of the two middle values', () => {
+    assert.strictEqual(median([5, 4]), 4.5);
+    assert.strictEqual(median([4, 5, 5, 4]), 4.5);
+    assert.strictEqual(median([1, 2, 9, 10]), 5.5);
+  });
+
+  test('it does not reorder the list it is given', () => {
+    const list = [3, 1, 2];
+    median(list);
+    assert.deepStrictEqual(list, [3, 1, 2]);
   });
 });
 
