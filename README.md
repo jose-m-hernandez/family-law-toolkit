@@ -12,7 +12,7 @@ private and not yet published.
 
 ## Running it
 
-Needs Python 3.9 or later and nothing else to install, for every command except the optional PDF tools under `pdf/`, which list what they need below. CI runs the tests on 3.9 and on the latest 3.x. The fifth-week counter and the week calendar are the other exceptions: both are JavaScript, they need Node.js (CI uses Node 26), and they need nothing else to install.
+Needs Python 3.9 or later and nothing else to install, for every command except the optional PDF tools under `pdf/`, which list what they need below. CI runs the tests on 3.9 and on the latest 3.x. The fifth-week counter and the week calendar are the other exceptions: both are JavaScript, they need Node.js 22 or later, and they need nothing else to install.
 
 Run it from the repository root, the folder that contains `family_law_toolkit/`:
 
@@ -127,25 +127,29 @@ What it prints, and when it stops:
 
 ## Numbering the weeks of a month
 
-A schedule or an order might say that something happens in "the second week" of the month, or in weeks 1 and 3. Which dates those are depends on which week counts as week 1. In April 2031, counted from the first week that contains a Thursday, week 2 runs Sunday 6 April to Saturday 12 April. An order may or may not say which weekday it counts from, so this command lets you see the weeks for the weekday you choose.
+A schedule or an order might say that something happens in "the second week" of the month, or in weeks 1 and 3. Which dates those are depends on which week counts as week 1. Weeks run Sunday to Saturday, and week 1 is the week that contains the month's first one of the weekday you choose. In April 2031, counted from the first week that contains a Thursday, week 2 runs Sunday 6 April to Saturday 12 April. An order may or may not say which weekday it counts from, so this command lets you see the weeks for the weekday you choose.
 
 It numbers the weeks of one month from the weekday you choose, lists each week's dates, and can also print the dates of chosen weekdays in every week and the month as a grid. It does not read an order, decide which weekday an order counts from, or say who has which day. Weeks run Sunday to Saturday only.
 
 Choosing the weekday and the month:
 
-- `--anchor` with one weekday name is required (for example `Thursday` or `Thu`, in any case). Week 1 is the week, Sunday to Saturday, that contains the month's first one of that weekday; week 2 contains the second, and so on. A month has as many numbered weeks as it has of that weekday, 4 or 5, which matches the "fifth week" of the counter above.
+- `--anchor` with one weekday name is required (for example `Thursday` or `Thu`, in any case). `--anchor` names the weekday that week 1 must contain: week 1 is the Sunday-to-Saturday week that holds the month's first one (the first Thursday, if you gave `Thursday`); week 2 holds the second, and so on. A month has as many numbered weeks as it has of that weekday, 4 or 5, so a month has a week 5 exactly when the counter above finds a fifth one of that weekday in it.
 - Give the year and then the month: the year is a whole number from 1583 to 9999, and the month is a whole number from 1 (January) to 12 (December), so `4` and `04` both mean April. Flags may come before or after them.
 - Spaces around a value or a list item are ignored; a tab or line break is an error.
 - Each flag is given once.
 
 Choosing what else to print:
 
-- `--day` takes weekday names, comma-separated (for example `Monday,Saturday`), and prints that weekday's date in every week. Each weekday is printed once, Sunday first, whatever order you gave them in. A Saturday and Sunday weekend falls in two weeks here, because the Sunday starts the next week.
-- `--grid` adds the month as a grid, one row per week, with each week's number on the row that starts it.
+- `--day` takes weekday names, comma-separated (for example `Monday,Saturday`), and prints that weekday's date in every week. Each weekday is printed once, Sunday first, whatever order you gave them in. A Saturday and the Sunday after it fall in different weeks, because every week starts on Sunday.
+- `--grid` adds the month as a grid. The row of each numbered week begins with its number; days outside the numbered weeks sit on rows with no number.
 
-Days of the month before week 1 and after the last week belong to no numbered week; they are listed at the end of the output.
+Days of the month before week 1 and after the last week belong to no numbered week; they are listed after the weeks, and before the grid when `--grid` is given.
 
-Run it from the repository root. It is JavaScript, so it runs with `node`, not `python3`:
+Run it from the repository root. It is JavaScript, so it runs with `node`, not `python3`. The full form is:
+
+    node js/week-calendar.js <year> <month> --anchor <weekday> [--day <weekdays>] [--grid]
+
+For example:
 
     node js/week-calendar.js 2031 4 --anchor Thursday --grid
 
@@ -171,12 +175,14 @@ It prints:
     Week 4  20  21  22  23  24  25  26
             27  28  29  30
 
+Week 1 can start in the month before, as it does here.
+
 Dates are calendar dates, and they print the same on a computer in any time zone.
 
 What it prints, and when it stops:
 
 - Every run first writes the line `Educational; not legal advice; not certified for court filing; consult counsel.` to standard error.
-- A run that cannot go ahead writes a message naming the problem and the usage to standard error, writes nothing to standard output, and exits with status 1. That covers: no year or month, a year or month outside the rules above, no weekday, a weekday name it does not recognise (for `--anchor` or in a `--day` list), a flag with no value, a flag given twice, a third word, and a flag it does not know.
+- A run that cannot go ahead writes a message naming the problem and the usage to standard error, writes nothing to standard output, and exits with status 1. That covers: no year or month, a year or month outside the rules above, no weekday, a weekday name it does not recognise (for `--anchor` or in a `--day` list), a flag with no value, a flag given twice, a word besides the year and the month that is not a flag or a flag's value, and a flag it does not know.
 - Its `--help` names the file `week-calendar.js`, so from the repository root give the path `js/week-calendar.js`.
 
 ## PDF tools (optional)
