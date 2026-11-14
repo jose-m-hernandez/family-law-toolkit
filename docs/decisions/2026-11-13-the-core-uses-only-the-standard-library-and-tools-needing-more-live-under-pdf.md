@@ -10,7 +10,7 @@ Date: 2026-11-13
 
 The core's promise that it needs nothing else to install stays true.
 
-Two PDF tools that already existed need pypdf, reportlab and poppler. They are
+Two PDF tools that already existed need, between them, pypdf, reportlab and poppler. They are
 added here as optional tools, so the software they need is listed in one place
 and the core stays free of it.
 
