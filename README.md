@@ -90,9 +90,9 @@ For help with what a difference means for your own case, you can ask a lawyer, y
 
 ## Counting fifth weeks
 
-A parenting schedule may give one parent the first and third weekends of each month and the other parent the rest. Most months have four of any given weekday, but a few have five, and those fifth weekends are where the two parents' totals drift apart. Which months have one depends on the day the weekend is counted from. Friday 30 April 2027 is the fifth Friday of April, yet the next day, Saturday 1 May 2027, is the first Saturday of May. Counted from its Friday that weekend is April's fifth; counted from its Saturday it is May's first.
+Every month holds at least four of each weekday, and some hold a fifth. A month is 28 to 31 days long, which is four whole weeks plus up to three extra days, and those extra days decide which weekdays turn up five times. Many recurring arrangements are written in terms of the first, third or fifth week of a month: a class that meets on the fifth Tuesday, a committee that meets on the first and third Monday. The fifth is the awkward one, because it exists only in some months.
 
-The yearly totals shift too. Counting by Fridays, 2027 has 5 months with a fifth Friday and 2028 has 4. Counting by Saturdays or by Sundays, 2027 has 4 and 2028 has 5. An order may or may not say which day it counts from, so this command lets you lay the choices side by side, year by year, before relying on one.
+Which months have a fifth one changes from year to year, and it is different for each weekday, so it cannot be read off a single calendar. This command lists them. Choose a weekday and a range of years, and it prints every date that is the fifth occurrence of that weekday in its month, so the pattern can be seen before a rule of thumb is relied on. The example further down does this for Tuesdays in 2031 and finds four.
 
 In this command, a month with five of a chosen weekday is said to have a "fifth week". The command counts those months in a range of years, and prints each date that is a fifth occurrence, a count for each year, and a summary. It counts calendar dates only: it does not read an order, build a schedule, or say who has which weekend.
 

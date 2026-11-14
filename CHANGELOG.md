@@ -35,6 +35,7 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The README section "Counting fifth weeks" opens with what the command counts for a weekday the reader chooses. No command behaves differently.
 - SECURITY.md now promises a best-effort reply to a private report, not a guaranteed one.
 - CONTRIBUTING.md now says every change is reviewed independently before it lands.
 - The one-line CLAUDE.md that pointed Claude Code at AGENTS.md is removed; Claude Code now reads AGENTS.md directly.
