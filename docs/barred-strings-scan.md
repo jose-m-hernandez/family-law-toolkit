@@ -19,10 +19,10 @@ To try the scan with an invented list, run this from the repository root. The en
 
 The first line starts `barred-strings scan: clean`, then `exit 0` prints.
 
-To see a hit, make entry 2 a string that is in the README, `exhibit packets`:
+To see a hit, make entry 2 a string that is in the README, `Counting fifth weeks`:
 
     n=$(date +%s)
-    printf 'barred-strings-canary-%s\nexhibit packets\n' "$n" > /tmp/try-list.txt
+    printf 'barred-strings-canary-%s\nCounting fifth weeks\n' "$n" > /tmp/try-list.txt
     BARRED_STRINGS_PATH=/tmp/try-list.txt python3 ci/barred_strings.py; echo "exit $?"
     rm /tmp/try-list.txt
 

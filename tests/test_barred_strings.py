@@ -1004,7 +1004,7 @@ class Case(unittest.TestCase):
 
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DOC_HIT_STRING = "exhibit packets"
+DOC_HIT_STRING = "Counting fifth weeks"
 
 
 class ScanDocCase(unittest.TestCase):
