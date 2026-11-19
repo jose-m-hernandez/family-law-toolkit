@@ -1,14 +1,23 @@
 # family-law-toolkit
 
-Tools for people preparing California family-law paperwork. Today: a guideline child-support calculator (steps 1 and 2: the support amount, and its allocation per child), a command that compares two files' text, a counter of months that have five of a chosen weekday, a calendar that numbers the weeks of a month, and two optional PDF tools: one renders chosen pages of a PDF to PNG images, one renders Markdown tables to a PDF. Not built yet: assembling exhibit packets and binders.
-
+Tools for people working with California family-law documents. Today: a guideline child-support calculator (steps 1 and 2: the support amount, and its allocation per child), a command that compares two files' text, a counter of months that have five of a chosen weekday, a calendar that numbers the weeks of a month, and two optional PDF tools: one renders chosen pages of a PDF to PNG images, one renders Markdown tables to a PDF.
 Educational; not legal advice; not certified for court filing; consult counsel.
 
-Early development, and not ready for other people to use. This repository is
-private and not yet published.
+Version 0.1.0. Six tools; each section below gives what it does, the exact command, an example on invented data, and what it does not do.
 
 - What changes, and when: [CHANGELOG.md](CHANGELOG.md)
 - How changes are made: [CONTRIBUTING.md](CONTRIBUTING.md)
+
+## What you need
+
+| Tool | Language | What to install | Command, from the repository root |
+|---|---|---|---|
+| Child-support calculator | Python | Python 3.9 or later; nothing else | `python3 -m family_law_toolkit.support` |
+| Compare two files' text | Python | Python 3.9 or later; nothing else | `python3 -m family_law_toolkit.compare` |
+| Fifth-week counter | JavaScript | Node.js 22 or later; nothing else | `node js/nth-week.js` |
+| Week calendar | JavaScript | Node.js 22 or later; nothing else | `node js/week-calendar.js` |
+| page-render (optional) | Python | Python 3.9 or later, pypdf, and poppler | `python3 pdf/page-render/page_render.py` |
+| md-table-pdf (optional) | Python | Python 3.9 or later, reportlab and pypdf; macOS only | `python3 pdf/md-table-pdf/md_table_pdf.py` |
 
 ## Running it
 
@@ -18,7 +27,7 @@ Run it from the repository root, the folder that contains `family_law_toolkit/`:
 
     python3 -m family_law_toolkit.support --a-ndi 9500.00 --b-ndi 3500.00 --a-time-percent 15 --children 3 --minimum-wage-hourly 21.00
 
-The numbers are invented. It prints a text report to the terminal. Add `--help` to see what each flag means.
+The numbers are invented. You type net disposable income yourself; the tool never computes tax. It prints a text report to the terminal. Add `--help` to see what each flag means.
 
 With the numbers above, the report reads:
 
@@ -61,17 +70,91 @@ You enter net disposable income yourself. This version does not work it out from
 
 For help working out the figures for your own case, you can ask a lawyer, your court's self-help center, or its family law facilitator.
 
+What it prints, and when it stops:
+
+- On success it writes the report to standard output, writes nothing to standard error, and exits with status 0. `--help` also exits with status 0.
+- A flag that is missing, a flag it does not know, or a value it cannot read writes a message naming the problem to standard error, writes nothing to standard output, and exits with status 2.
+
+Limits:
+
+- You type net disposable income. The tool never computes tax or deductions, and does not apply FC 4059.
+- You type the share of time. The default-proceeding rule (FC 4055(b)(6)) is not applied.
+- The per-child allocation is shown only with `--same-time-sharing-arrangement yes`, only with two or more children, and only when all the children share one arrangement. Different shares for different children together with that flag is an error, which exits with status 2 and prints nothing on standard output.
+- It is arithmetic on the figures you enter. It is not legal advice.
+- FC means the California Family Code. FC 4055 is the section the calculator follows.
+
 ## Comparing two files' text
 
 This command compares two files' text and lists the differences it finds, so you can read each one for yourself. It reads two UTF-8 plain-text or Markdown files, up to 200,000 bytes each. PDF and Word files are not read.
 
 Run it from the repository root, with the same Python as above:
 
-    python3 -m family_law_toolkit.compare --old notes/letter-a.txt --new notes/letter-b.txt
+    python3 -m family_law_toolkit.compare --old docs/examples/letter-a.txt --new docs/examples/letter-b.txt
 
-The file names are invented. "Old" and "new" are only labels you choose. The command prints a plain-text report to the terminal: each file's path, byte size and sha256, then the differences in the text, by paragraph and then by word. Differences in spacing, line ends, the byte-order mark, and hidden or look-alike characters are listed separately, except in the places listed under "What it does not do" below. The entries are labelled "Differs", "Only in old" and "Only in new" for paragraphs, with their own labels for spacing, hidden or look-alike characters, and the files as a whole.
+The two files are invented letters kept in this repository. "Old" and "new" are only labels you choose. The command prints a plain-text report to the terminal: each file's path, byte size and sha256, then the differences in the text, by paragraph and then by word. Differences in spacing, line ends, the byte-order mark, and hidden or look-alike characters are listed separately, except in the places listed under "What it does not do" below. The entries are labelled "Differs", "Only in old" and "Only in new" for paragraphs, with their own labels for spacing, hidden or look-alike characters, and the files as a whole.
 
 The exit status is 0 when the two files are identical byte for byte, 1 when they differ, and 2 when the comparison could not run. Add `--help` to see what each flag means.
+
+For the two example letters, the command exits with status 1 and writes nothing to standard error. The report is:
+
+    family-law-toolkit v0.1.0 — not certified for court filing
+
+    Comparison of two text files
+    Educational; not legal advice; not certified for court filing; consult counsel.
+
+    Files
+      Old (--old): docs/examples/letter-a.txt
+        221 bytes; 9 lines; 5 paragraphs; byte-order mark: no; line ends: LF
+        sha256: e4f6d53f8e50e7baa65ea5f721b287dafeec48d533e05fd5004ef2656f85abfa
+      New (--new): docs/examples/letter-b.txt
+        266 bytes; 11 lines; 6 paragraphs; byte-order mark: no; line ends: LF
+        sha256: eef36822750724a401f7b8530690221bbf72dc1d935c1611c01ad6827be41754
+
+    Result: the files differ. Differs 2, only in old 0, only in new 0, spacing 0, hidden or look-alike characters 0, file 0.
+
+    Differences
+      1. Differs: old file paragraph 2, file line 3; new file paragraph 2, file line 3
+         old: The community hall will be open on Saturday morning for the seed
+           swap.
+         new: The community hall will be open on Sunday morning for the seed swap.
+         - old file line 3, new file line 3: old "Saturday", new "Sunday", after
+           "be open on"
+      2. Differs: old file paragraph 4, file line 7; new file paragraphs 4-5, file lines 7-9
+         old: We will meet again on the first Friday of next month.
+         new: We will meet again on the first Monday of next month.
+         new: Tea and biscuits will be offered at the door.
+         - old file line 7, new file line 7: old "Friday", new "Monday", after "on
+           the first"
+         - new file line 9: only in new (paragraph break) "Tea and biscuits will
+           be offered at the door.", after "of next month."
+
+    Notes
+      This report lists differences in the text of the two files. It does not say
+      whether any difference matters.
+      It reads both files as plain text. Fonts, bold, italics, page layout,
+      checked boxes and form fields are not compared, and Markdown markup is read
+      as ordinary characters.
+      Moves are not tracked: a paragraph that moved, or the paragraphs it moved
+      past, may be listed as only in old at one place and only in new at another.
+      "Old" and "new" are the labels you gave. This tool does not check which file
+      is older, who changed either file, when, or whether either was filed or
+      served.
+      This report can repeat text from both files and prints their paths as you
+      typed them. Keep it as private as the files.
+      Paragraph and line numbers in this report count the paragraphs and lines of
+      each file as saved (lines end at LF, CR or CRLF). They are not the paper's
+      own numbered paragraphs, or the page and line numbers of a printed or filed
+      copy.
+      Spacing and hidden or look-alike characters are not compared inside a
+      Differs entry. Blank lines are not compared at, just before or just after a
+      Differs, Only in old or Only in new entry, except at the end of a file. When
+      both files use the same kinds of line end and their text differs elsewhere,
+      where the line ends sit is not compared.
+      If a file was made from a PDF or a form, checked boxes, form fields, stamps
+      and signatures may be missing from it. This report covers only the text in
+      the two files.
+
+Both letters are invented. The report lists two differences: one changed word ("Saturday" and "Sunday"), and one changed day ("the first Friday" and "the first Monday") followed by a paragraph that is only in the new letter.
 
 What it does not do:
 
@@ -115,7 +198,19 @@ Run it from the repository root. It is JavaScript, so it runs with `node`, not `
 
     node js/nth-week.js --anchor Tuesday --start 2031 --end 2031
 
-It lists 2031-04-29, 2031-07-29, 2031-09-30 and 2031-12-30.
+It lists 2031-04-29, 2031-07-29, 2031-09-30 and 2031-12-30. It exits with status 0. The label line below goes to standard error, and standard output is as follows (its first line is empty):
+
+    5th week counter (weeks numbered from the first week that contains the anchor weekday)
+    Range: 2031–2031
+    Definition: Week 1 is the first week that contains a Tuesday. A month has a "5th week" if it contains 5 Tuesdays.
+    Showing dates and per-year summary.
+    2031-04-29
+    2031-07-29
+    2031-09-30
+    2031-12-30
+    Year 2031: 4 months
+    Tuesday (2) → Months with a 5th week (first week contains Tuesday): 4 (between 2031 and 2031).
+    Summary for Tuesday: total months=4, years=1, avg/year=4.00, median/year=4, min/year=4, max/year=4
 
 Dates are calendar dates, and they print the same on a computer in any time zone.
 
@@ -175,7 +270,7 @@ It prints:
     Week 4  20  21  22  23  24  25  26
             27  28  29  30
 
-Week 1 can start in the month before, as it does here.
+Week 1 can start in the month before, as it does here. That run exits with status 0, and writes the label line below to standard error.
 
 Dates are calendar dates, and they print the same on a computer in any time zone.
 
@@ -187,25 +282,66 @@ What it prints, and when it stops:
 
 ## PDF tools (optional)
 
-Both tools are optional. page-render needs pypdf and poppler's `pdftoppm`, `pdfinfo` and `pdftotext`. md-table-pdf needs reportlab and pypdf to run, needs poppler only for its tests, and runs on macOS only. Install pypdf and reportlab at the versions in `pdf/requirements.txt` with `python3 -m pip install -r pdf/requirements.txt`. The poppler tools are expected at `/opt/homebrew/bin` (on a Mac with Homebrew: `brew install poppler`).
+Both tools are optional. page-render needs pypdf and poppler's `pdftoppm`, `pdfinfo` and `pdftotext`. md-table-pdf needs reportlab and pypdf to run, needs poppler only for its tests, and runs on macOS only. Install pypdf and reportlab, at the versions in `pdf/requirements.txt`, into a virtual environment outside the repository (as shown just below), and run both tools with that environment's `python`. The poppler tools are expected at `/opt/homebrew/bin` (on a Mac with Homebrew: `brew install poppler`).
+
+Make the virtual environment in a temporary folder, outside the repository; the commands on this page reuse the folder name `OUT`:
+
+    OUT=$(mktemp -d)
+    python3 -m venv "$OUT/venv"
+    "$OUT/venv/bin/python" -m pip install -r pdf/requirements.txt
 
 page-render renders chosen pages of an image-only PDF to PNG images, so they can be read and cited. Run it from the repository root:
 
     python3 pdf/page-render/page_render.py notes/scan.pdf --pages 1-3 -o notes/pages
 
-The file names are invented. It writes one PNG per page, named by the source page, plus `manifest.tsv` and `contact_sheet.html`. The environment variables `PAGE_RENDER_PDFTOPPM`, `PAGE_RENDER_PDFINFO` and `PAGE_RENDER_PDFTOTEXT` can point it at other copies of the poppler tools. Its exit codes and checks are in `pdf/page-render/README.md`.
+The file names are invented. It writes one PNG per page, named by the source page, plus `manifest.tsv` and `contact_sheet.html`. The environment variables `PAGE_RENDER_PDFTOPPM`, `PAGE_RENDER_PDFINFO` and `PAGE_RENDER_PDFTOTEXT` can point it at other copies of the poppler tools. page-render looks for the poppler programs in `/opt/homebrew/bin`, where Homebrew installs them on an Apple-silicon Mac; on an Intel Mac Homebrew uses `/usr/local/bin`, so set the environment variables named above. Its exit codes and checks are in `pdf/page-render/README.md`.
 
 md-table-pdf renders Markdown pipe tables (with optional headings and paragraphs) to a landscape US Letter PDF:
 
     python3 pdf/md-table-pdf/md_table_pdf.py notes/table.md -o notes/table.pdf
 
+Replace notes/scan.pdf and notes/table.md with your own files; the worked example further down needs no file of your own.
+
 md-table-pdf runs on macOS only: it needs the Arial font that macOS keeps in /System/Library/Fonts/Supplemental, and on other systems it stops with exit status 5. Its exit codes and checks are in `pdf/md-table-pdf/README.md`.
 
 Neither tool says what a page or table means for your case.
 
+A worked example, on an invented file kept in this repository (`docs/examples/table.md`: a heading, a paragraph and a three-row table). It uses the virtual environment made above, and writes the PDF outside the repository, in the same temporary folder:
+
+    "$OUT/venv/bin/python" pdf/md-table-pdf/md_table_pdf.py docs/examples/table.md -o "$OUT/table.pdf"
+
+On macOS, with the packages installed, this exits with status 0, writes nothing to standard error, and prints the absolute path of the PDF and then:
+
+    1 tables, 3 body rows, 1 pages
+
+Then render page 1 of that PDF:
+
+    "$OUT/venv/bin/python" pdf/page-render/page_render.py "$OUT/table.pdf" --pages 1 -o "$OUT/pages"
+
+It exits with status 0. It prints four lines on standard output: `OK: rendered 1 of 1 page(s) at 200 dpi ->` followed by the folder, then `pages: 1`, then the paths of `manifest.tsv` and `contact_sheet.html`. On standard error it prints one warning, which is advisory and does not change the exit status:
+
+    page_render: warning: page 1: text differ between pypdf and poppler
+
+The folder holds `table-p0001.png`, `manifest.tsv` and `contact_sheet.html`. This is the manifest, with tabs between the columns; the sha256 may differ on your computer, because it depends on the poppler version:
+
+    page	file	width_px	height_px	sha256	text_check
+    1	table-p0001.png	2200	1700	8196e537de52e008561022e45e4bedcd9e789433cef355ead9d01656ab719f5b	differ
+
+page-render stops with exit status 4 if the output folder already holds an earlier page-render result, so give it a new folder each time.
+
+## What the tools touch
+
+- The child-support calculator, the fifth-week counter and the week calendar read no file. They print to the terminal only.
+- The compare command reads the two files you name with `--old` and `--new`, and writes to the terminal only.
+- page-render reads the PDF you name. It writes into the folder you give with `-o`: the PNG images, `manifest.tsv` and `contact_sheet.html`. It also runs the poppler programs `pdftoppm`, `pdfinfo` and `pdftotext` on your computer.
+- md-table-pdf reads the Markdown file you name, and the font files that macOS keeps in `/System/Library/Fonts/Supplemental`: Arial Unicode (or Arial, if that one is missing), and Arial Bold and Courier New when present. It writes the PDF you give with `-o`; without `-o` it writes the PDF next to the input file. While it works it writes a temporary file in the output folder and then renames it.
+- None of the six makes a network call. A search of the Python and JavaScript files under `family_law_toolkit/`, `js/` and `pdf/` for networking modules and calls finds none outside the tests; the only match in a tool is page-render's use of `urllib.parse` to percent-encode file names in the contact sheet.
+
 ## Licence
 
-Copyright © 2026 Jose Miguel Hernandez. Licensed under the GNU Affero General Public License v3.0 or later (see [LICENSE](LICENSE)). A commercial licence is also available from the copyright holder.
+Copyright (c) 2026 Jose Miguel Hernandez. Licensed under the GNU Affero General Public License v3.0 or later (see [LICENSE](LICENSE)). Any copying, modification or distribution beyond what that licence permits requires the copyright holder's prior written permission.
+
+A commercial licence is available from the copyright holder.
 
 ## Development
 
