@@ -94,6 +94,72 @@ NO_SINGLE_FIGURE_LINE = (
     "  The presumption is rebuttable and no single figure in the range is chosen."
 )
 
+# Additional child support (FC 4062, 4061). Wording is unsigned until reviewed.
+ADDITIONAL_REST_HEADING = "Additional child support (FC 4062)"
+ADDITIONAL_REST_LINE = (
+    "  No additional child support costs were entered. "
+    "This report does not say that none apply."
+)
+ADDITIONAL_HEADING = "Additional child support (FC 4062), split under FC 4061"
+ADDITIONAL_COSTS_LINE = "  Costs you entered, monthly:"
+ADDITIONAL_CHILDCARE_LABEL = (
+    "    Childcare costs related to employment or to reasonably necessary "
+    "education or training for employment skills (FC 4062(a)(1)): %s"
+)
+ADDITIONAL_HEALTH_LABEL = (
+    "    The reasonable uninsured health care costs for the children "
+    "(FC 4062(a)(2)): %s"
+)
+ADDITIONAL_NOT_ENTERED = "(not entered)"
+ADDITIONAL_TOTAL_LINE = "    Total: %s"
+ADDITIONAL_FIGURES_LINE = (
+    "  Net disposable income figures used (you entered them; "
+    "this report did not adjust them):"
+)
+ADDITIONAL_A_TYPED_LINE = "    Parent A, as you entered it: %s"
+ADDITIONAL_B_TYPED_LINE = "    Parent B, as you entered it: %s"
+ADDITIONAL_REDUCTION_HEADING = (
+    "  Basic support is taken first (FC 4061(b)(1)); then the paying parent's "
+    "figure is reduced by it (FC 4061(d)):"
+)
+ADDITIONAL_PAYER_LINE = (
+    "    Parent %s, the paying parent in this report: %s - %s = %s"
+)
+ADDITIONAL_NOT_INCREASED_LINE = (
+    "    Parent %s is not increased by support received: %s"
+)
+ADDITIONAL_ZERO_SUPPORT_LINE = (
+    "    Basic support prints 0.00, so the reduction is 0.00 and both figures "
+    "stay as typed (FC 4061(d))."
+)
+ADDITIONAL_SPLIT_HEADING = "  Split in proportion to those figures (FC 4061(a), (b)(2)):"
+ADDITIONAL_SPLIT_LINE = "    Parent %s: %s / %s = %s%%: %s"
+ADDITIONAL_CHOSEN_LINE = "  Split you entered: Parent A %s%%, Parent B %s%%"
+ADDITIONAL_CHOSEN_AMOUNT_LINE = "    Parent %s: %s"
+ADDITIONAL_TOP_LINE = "  At the top of the support range, %s:"
+ADDITIONAL_BOTTOM_LINE = "  At the bottom of the support range, %s:"
+
+NOTE_ADDITIONAL_INCOME = (
+    "You enter each parent's adjusted net disposable income yourself. "
+    "This report does not adjust income for spousal support (FC 4061(c))."
+)
+NOTE_ADDITIONAL_MAY = (
+    "Costs the court may order (FC 4062(b)) are not computed here, and nothing "
+    "in this report shows them as owed."
+)
+NOTE_ADDITIONAL_DECIDE = (
+    "This report does not decide which costs count, whether a cost is actually "
+    "incurred or reasonable, or whether a cost is already included in the "
+    "guideline figure. For those questions you can ask a lawyer, your court's "
+    "self-help center, or its family law facilitator."
+)
+NOTE_ADDITIONAL_BASIC = (
+    "The basic support amount above is this report's own arithmetic. It does "
+    "not apply the rebuttal factors of FC 4057 (see FC 4061(b)(1)), and FC "
+    "4061(d) reduces by the basic support \"ordered to be paid\", which can "
+    "differ from this figure."
+)
+
 
 def paginate(body_lines):
     """Split body lines into pages; each page opens with the identity line."""
@@ -187,6 +253,98 @@ def _allocation_lines(result, shown):
     return lines
 
 
+def _percent_text(hundredths):
+    return cents_text(hundredths)
+
+
+def _additional_end_lines(end, a_typed, b_typed):
+    """The reduction lines for one end of the support amount."""
+    lines = [ADDITIONAL_REDUCTION_HEADING]
+    if end.support_cents == 0:
+        lines.append(ADDITIONAL_ZERO_SUPPORT_LINE)
+        return lines
+    support = cents_text(end.support_cents)
+    if end.paying == "A":
+        paying, typed, reduced = "A", a_typed, end.a_reduced
+        other, other_figure = "B", end.b_reduced
+    else:
+        paying, typed, reduced = "B", b_typed, end.b_reduced
+        other, other_figure = "A", end.a_reduced
+    lines.append(
+        ADDITIONAL_PAYER_LINE % (paying, money(typed), support, money(reduced))
+    )
+    lines.append(ADDITIONAL_NOT_INCREASED_LINE % (other, money(other_figure)))
+    return lines
+
+
+def _additional_lines(result):
+    """The additional child support section, for any GuidelineResult."""
+    extra = result.additional
+    if extra is None:
+        return [ADDITIONAL_REST_HEADING, ADDITIONAL_REST_LINE]
+
+    def cost(label, value):
+        return label % (ADDITIONAL_NOT_ENTERED if value is None else money(value))
+
+    lines = [
+        ADDITIONAL_HEADING,
+        ADDITIONAL_COSTS_LINE,
+        cost(ADDITIONAL_CHILDCARE_LABEL, extra.childcare),
+        cost(ADDITIONAL_HEALTH_LABEL, extra.health),
+        ADDITIONAL_TOTAL_LINE % cents_text(extra.total_cents),
+    ]
+    if extra.share_percent is not None:
+        lines += [
+            ADDITIONAL_CHOSEN_LINE
+            % (plain(extra.share_percent, 2), plain(100 - extra.share_percent, 2)),
+            ADDITIONAL_CHOSEN_AMOUNT_LINE % ("A", cents_text(extra.a_cents)),
+            ADDITIONAL_CHOSEN_AMOUNT_LINE % ("B", cents_text(extra.b_cents)),
+        ]
+        return lines
+    lines += [
+        ADDITIONAL_FIGURES_LINE,
+        ADDITIONAL_A_TYPED_LINE % money(extra.a_adjusted),
+        ADDITIONAL_B_TYPED_LINE % money(extra.b_adjusted),
+    ]
+    for end in extra.ends:
+        if extra.ranged:
+            heading = ADDITIONAL_TOP_LINE if end.label == "top" else ADDITIONAL_BOTTOM_LINE
+            lines.append(heading % cents_text(end.support_cents))
+        lines += _additional_end_lines(end, extra.a_adjusted, extra.b_adjusted)
+        denominator = money(end.a_reduced + end.b_reduced)
+        lines += [
+            ADDITIONAL_SPLIT_HEADING,
+            ADDITIONAL_SPLIT_LINE
+            % (
+                "A",
+                money(end.a_reduced),
+                denominator,
+                _percent_text(end.a_percent_hundredths),
+                cents_text(end.a_cents),
+            ),
+            ADDITIONAL_SPLIT_LINE
+            % (
+                "B",
+                money(end.b_reduced),
+                denominator,
+                _percent_text(end.b_percent_hundredths),
+                cents_text(end.b_cents),
+            ),
+        ]
+    return lines
+
+
+def _additional_notes(result):
+    extra = result.additional
+    if extra is None:
+        return []
+    notes = []
+    if extra.share_percent is None:
+        notes.append(NOTE_ADDITIONAL_INCOME)
+    notes += [NOTE_ADDITIONAL_MAY, NOTE_ADDITIONAL_DECIDE, NOTE_ADDITIONAL_BASIC]
+    return notes
+
+
 def render_report(result):
     """Return the full report text for a GuidelineResult."""
     hn = result.a_ndi if result.high_earner == "A" else result.b_ndi
@@ -239,6 +397,7 @@ def render_report(result):
     body += _low_income_lines(result)
     if shown is not None:
         body += [""] + _allocation_lines(result, shown)
+    body += [""] + _additional_lines(result)
     body += ["", NOTE_NDI, NOTE_TIME_SHARE]
     if result.children >= 2:
         if arrangement == "no":
@@ -249,5 +408,6 @@ def render_report(result):
             body.append(NOTE_PER_CHILD_NO_FLAG)
         elif shown is None:
             body.append(NOTE_PER_CHILD_NO_PAYER)
+    body += _additional_notes(result)
     body += ["", CLOSING_LINE]
     return "\f".join(paginate(body))

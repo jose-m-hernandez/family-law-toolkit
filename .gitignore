@@ -8,8 +8,13 @@ dist/
 
 # Local agent tooling (per-machine, never shared)
 .claude/settings.local.json
-.claude/skills/
-.codex/
+.claude/skills/*
+.codex/*
+.codex/skills/*
+# The calculator skill's wiring: one tracked symlink per harness, to skills/support-calculator
+!.claude/skills/support-calculator
+!.codex/skills
+!.codex/skills/support-calculator
 
 # macOS
 .DS_Store

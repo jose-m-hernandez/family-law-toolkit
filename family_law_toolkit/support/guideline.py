@@ -93,6 +93,9 @@ class GuidelineResult:
     # One share of time per child, as parsed, when a list was given (R12, R13);
     # None when a single value was given.
     a_time_percent_by_child: object = None
+    # The additional child support split (FC 4062, 4061), attached by the
+    # command after compute(); None when no cost was entered.
+    additional: object = None
 
 
 @dataclasses.dataclass(frozen=True)

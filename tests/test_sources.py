@@ -48,5 +48,42 @@ class SourcesTests(unittest.TestCase):
         self.assertEqual(txt, convert(XML_PATH).encode("utf-8"))
 
 
+# Sections 4061 and 4062, which the additional-child-support section builds on.
+SECTION_HASHES = {
+    "fc4061": {
+        "xml": "443f3671108fdeece78465bfb7ef3c6bf491ed8d10b3725e580d49faeda3a56a",
+        "txt": "df2c6cbafc688c86987bbb44639356bf215e752626b862cc704a9221101bf2ad",
+    },
+    "fc4062": {
+        "xml": "5040d4045b0d0e334b984d4ce2e5ab98e6d335b21763c2db07124e2edbbbc355",
+        "txt": "689fd81466a045404e94e935bbfa8e1bd0a2a31b38a86e965851d7d5c1c10fbb",
+    },
+}
+
+
+class SectionsFourThousandSixtyOneAndTwoTests(unittest.TestCase):
+    def test_fc4061_xml_hash(self):
+        self.assertEqual(sha256_of(SOURCES / "fc4061.xml"), SECTION_HASHES["fc4061"]["xml"])
+
+    def test_fc4061_txt_hash(self):
+        self.assertEqual(sha256_of(SOURCES / "fc4061.txt"), SECTION_HASHES["fc4061"]["txt"])
+
+    def test_fc4062_xml_hash(self):
+        self.assertEqual(sha256_of(SOURCES / "fc4062.xml"), SECTION_HASHES["fc4062"]["xml"])
+
+    def test_fc4062_txt_hash(self):
+        self.assertEqual(sha256_of(SOURCES / "fc4062.txt"), SECTION_HASHES["fc4062"]["txt"])
+
+    def test_fc4061_txt_is_the_conversion_of_the_xml(self):
+        with open(str(SOURCES / "fc4061.txt"), "rb") as handle:
+            txt = handle.read()
+        self.assertEqual(txt, convert(SOURCES / "fc4061.xml").encode("utf-8"))
+
+    def test_fc4062_txt_is_the_conversion_of_the_xml(self):
+        with open(str(SOURCES / "fc4062.txt"), "rb") as handle:
+            txt = handle.read()
+        self.assertEqual(txt, convert(SOURCES / "fc4062.xml").encode("utf-8"))
+
+
 if __name__ == "__main__":
     unittest.main()
