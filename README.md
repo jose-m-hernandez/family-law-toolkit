@@ -60,6 +60,9 @@ With the numbers above, the report reads:
       Threshold (FC 4055(b)(7)): 3640.00 = hourly minimum wage x 40 x 52 / 12
       The paying parent's net disposable income is not less than the threshold, so the low-income adjustment does not apply (FC 4055(b)(7)).
 
+    Additional child support (FC 4062)
+      No additional child support costs were entered. This report does not say that none apply.
+
     You enter net disposable income yourself. This version does not work it out from deductions (FC 4059).
     You enter the share of time yourself. The default-proceeding rule (FC 4055(b)(6)) is not applied.
     The per-child allocation (FC 4055(b)(8)) is shown only if you add --same-time-sharing-arrangement yes. It does not apply when the children have different time-sharing arrangements.
@@ -82,6 +85,40 @@ Limits:
 - The per-child allocation is shown only with `--same-time-sharing-arrangement yes`, only with two or more children, and only when all the children share one arrangement. Different shares for different children together with that flag is an error, which exits with status 2 and prints nothing on standard output.
 - It is arithmetic on the figures you enter. It is not legal advice.
 - FC means the California Family Code. FC 4055 is the section the calculator follows.
+
+### Adding costs on top of guideline support
+
+The calculator has five more optional flags: two for monthly costs that FC 4062(a) names (childcare costs, and uninsured health care costs for the children), and three for how those costs are divided between the two parents:
+
+- `--childcare-monthly AMOUNT` is the monthly childcare cost (FC 4062(a)(1)).
+- `--uninsured-health-monthly AMOUNT` is the monthly uninsured health care cost for the children (FC 4062(a)(2)).
+- `--a-adjusted-ndi AMOUNT` and `--b-adjusted-ndi AMOUNT` are each parent's net disposable income as you worked it out after any spousal-support adjustment, not reduced for child support. Give both, or neither.
+- `--a-cost-share-percent PERCENT` is Parent A's share of the costs, if you choose the split yourself instead of giving the two adjusted figures.
+
+Give at least one cost, and then either both adjusted figures or `--a-cost-share-percent`. With the adjusted figures, the report reduces the paying parent's figure by the support amount it printed (FC 4061(d)) and divides the costs in proportion to the two figures (FC 4061(a), (b)(2)). A run that gives a cost without a way to split it, or an option that would go unused, stops with exit status 2 and one line on standard error.
+
+The numbers are invented:
+
+    $ python3 -m family_law_toolkit.support --a-ndi 5000.00 --b-ndi 3000.00 --a-time-percent 20 --children 1 --minimum-wage-hourly 21.00 --childcare-monthly 600.00 --uninsured-health-monthly 120.00 --a-adjusted-ndi 5000.00 --b-adjusted-ndi 3000.00
+
+The additional-costs part of the report reads:
+
+    Additional child support (FC 4062), split under FC 4061
+      Costs you entered, monthly:
+        Childcare costs related to employment or to reasonably necessary education or training for employment skills (FC 4062(a)(1)): 600.00
+        The reasonable uninsured health care costs for the children (FC 4062(a)(2)): 120.00
+        Total: 720.00
+      Net disposable income figures used (you entered them; this report did not adjust them):
+        Parent A, as you entered it: 5000.00
+        Parent B, as you entered it: 3000.00
+      Basic support is taken first (FC 4061(b)(1)); then the paying parent's figure is reduced by it (FC 4061(d)):
+        Parent A, the paying parent in this report: 5000.00 - 1020.00 = 3980.00
+        Parent B is not increased by support received: 3000.00
+      Split in proportion to those figures (FC 4061(a), (b)(2)):
+        Parent A: 3980.00 / 6980.00 = 57.02%: 410.54
+        Parent B: 3000.00 / 6980.00 = 42.98%: 309.46
+
+The tool never works out income and never says which costs count, whether a cost is actually incurred or reasonable, or what any court will order. For those questions you can ask a lawyer, your court's self-help center, or its family law facilitator.
 
 ## Comparing two files' text
 

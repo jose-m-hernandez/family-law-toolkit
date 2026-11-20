@@ -6,6 +6,23 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- The `support` command takes five more optional inputs for additional child support (FC 4062): `--childcare-monthly`, `--uninsured-health-monthly`, `--a-adjusted-ndi`, `--b-adjusted-ndi` and `--a-cost-share-percent`. Given a cost, the report splits it between the parents in proportion to the two adjusted net disposable income figures you type, after reducing the paying parent's figure by the basic support the report printed (FC 4061(d)), at each end of the range when the support amount is a range; or by the split you type. It does not adjust income for spousal support and does not say which costs count. A cost without a way to split it, an unused option, a repeated option, or a figure that leaves no share to work out is refused with one line on standard error and exit status 2.
+- `support --help` lists the five new options, carries the statute's own sentences for the two cost options, and gains a second example, with costs, on invented numbers.
+- README: a subsection on the five new options, with an example and its printed section on invented numbers; a test checks that the printed section equals what the command prints.
+- `docs/sources/` holds FC 4061 and FC 4062 beside FC 4055, and `tests/test_sources.py` pins the sha256 of all four new files and checks each `.txt` against its `.xml`.
+- `docs/specs/add-ons.md` and `docs/derivations/add-ons.md`: the behaviour spec for the new section and the hand derivations its tests check, on invented numbers.
+- A skill, `skills/support-calculator/SKILL.md`, for Claude Code and Codex, wired to the one source file by tracked symlinks at `.claude/skills/support-calculator` and `.codex/skills/support-calculator`. `tests/test_skill.py` fails if a wired path stops resolving to the source or the skill names a command or flag that does not exist. See `docs/decisions/2026-11-19-the-calculator-skill-has-one-source-file.md`.
+- Python API: `GuidelineResult` has one more field, `additional` (None unless the command attached a split); `compute()` is unchanged. The new module `family_law_toolkit.support.additional` does the split.
+
+### Changed
+
+- Every `support` report now prints an additional-child-support section after the low-income section: the split when a cost is given, or a line saying no cost was entered. Every existing invocation keeps exit status 0 and gains only those lines, so the golden reports in `tests/golden/guideline_step1_reports.json` gain three lines each.
+- The `support` parser has eleven options: the five required ones and six optional ones, up from six.
+- `.gitignore` tracks the two skill symlinks and keeps ignoring the rest of `.claude/skills/` and `.codex/`.
+- AGENTS.md: the Status paragraph describes the new optional inputs and the new section.
+
 ## [0.1.0] - 2026-11-19
 
 ### Added

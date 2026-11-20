@@ -9,12 +9,21 @@ task here.
 Version 0.1.0. Four commands ship, and two optional PDF tools.
 The first is `python3 -m family_law_toolkit.support`. It takes five required
 inputs (`--a-ndi`, `--b-ndi`, `--a-time-percent`, `--children`,
-`--minimum-wage-hourly`) and one optional input
-(`--same-time-sharing-arrangement`), and prints a text report of the California
-guideline child-support formula (Family Code section 4055) on the net
+`--minimum-wage-hourly`) and six optional inputs: the original one
+(`--same-time-sharing-arrangement`) and five for additional child support
+(`--childcare-monthly`, `--uninsured-health-monthly`, `--a-adjusted-ndi`,
+`--b-adjusted-ndi`, `--a-cost-share-percent`). It prints a text report of the
+California guideline child-support formula (Family Code section 4055) on the net
 disposable income the person enters. With two or more children, and
 `--same-time-sharing-arrangement yes`, it also shows the per-child allocation
-of section 4055(b)(8). It does not work out net disposable income. The second
+of section 4055(b)(8). Its report also has an additional-child-support section
+(FC 4062, 4061): with no cost entered it says so; with a cost, it splits the
+costs the person typed between the parents, either in proportion to the two
+adjusted net disposable income figures the person typed (after taking the basic
+support it printed from the paying parent's figure, FC 4061(d)) or by a split
+the person chose. It does not work out net disposable income, does not adjust
+income for spousal support, and does not say which costs count or what any court
+will order. The second
 is `python3 -m family_law_toolkit.compare --old FILE --new FILE`, which
 compares two files' text. It reads two UTF-8 plain-text or Markdown files, up
 to 200,000 bytes each, and prints a plain-text report of the differences in

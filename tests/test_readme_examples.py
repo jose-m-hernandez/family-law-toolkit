@@ -15,6 +15,15 @@ SUPPORT_COMMAND = (
     INDENT + "python3 -m family_law_toolkit.support --a-ndi 9500.00 --b-ndi 3500.00"
     " --a-time-percent 15 --children 3 --minimum-wage-hourly 21.00"
 )
+# The additional-costs example. It starts with a prompt so that the line that
+# runs the first example (test_report.test_readme_example_command_runs) stays
+# the only README line that begins with the bare command.
+ADDITIONAL_COMMAND = (
+    INDENT + "$ python3 -m family_law_toolkit.support --a-ndi 5000.00 --b-ndi 3000.00"
+    " --a-time-percent 20 --children 1 --minimum-wage-hourly 21.00"
+    " --childcare-monthly 600.00 --uninsured-health-monthly 120.00"
+    " --a-adjusted-ndi 5000.00 --b-adjusted-ndi 3000.00"
+)
 COMPARE_COMMAND = (
     INDENT + "python3 -m family_law_toolkit.compare"
     " --old docs/examples/letter-a.txt --new docs/examples/letter-b.txt"
@@ -60,6 +69,21 @@ class ReadmeExampleTests(unittest.TestCase):
         self.assertEqual(done.returncode, 0)
         self.assertEqual(done.stderr, "")
         self.assertEqual(block_after(SUPPORT_COMMAND), done.stdout)
+
+    def test_additional_costs_example_section_is_what_the_command_prints(self):
+        args = ADDITIONAL_COMMAND.split("family_law_toolkit.support ")[1].split()
+        done = run_cli(*args)
+        self.assertEqual(done.returncode, 0)
+        self.assertEqual(done.stderr, "")
+        shown = block_after(ADDITIONAL_COMMAND).rstrip("\n").split("\n")
+        printed = done.stdout.split("\n")
+        self.assertEqual(shown[0], "Additional child support (FC 4062), split under FC 4061")
+        self.assertEqual(len(shown), 14)
+        start = printed.index(shown[0])
+        # The README shows the section whole, line for line, as printed.
+        self.assertEqual(printed[start:start + len(shown)], shown)
+        # And the section ends where the README's block ends.
+        self.assertEqual(printed[start + len(shown)], "")
 
     def test_compare_example_exits_1_and_output_is_what_the_command_prints(self):
         args = COMPARE_COMMAND.split("family_law_toolkit.compare ")[1].split()

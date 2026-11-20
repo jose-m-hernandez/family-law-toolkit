@@ -95,6 +95,11 @@ HEADING_NEW = "Guideline child support (California Family Code section 4055)"
 CLOSING_LINE_TEXT = (
     "This report is arithmetic on the figures you entered. It is not legal advice."
 )
+REST_HEADING_LINE = "Additional child support (FC 4062)"
+REST_TEXT_LINE = (
+    "  No additional child support costs were entered. "
+    "This report does not say that none apply."
+)
 E1_LINE = "The per-child allocation (FC 4055(b)(8)) is not shown."
 E2_LINE = (
     "The per-child allocation (FC 4055(b)(8)) is shown only if you add "
@@ -663,8 +668,10 @@ class ReportTests(unittest.TestCase):
         )
         self.assertEqual(
             flags,
-            ["--a-ndi", "--a-time-percent", "--b-ndi", "--children",
-             "--minimum-wage-hourly", "--same-time-sharing-arrangement"],
+            ["--a-adjusted-ndi", "--a-cost-share-percent", "--a-ndi",
+             "--a-time-percent", "--b-adjusted-ndi", "--b-ndi",
+             "--childcare-monthly", "--children", "--minimum-wage-hourly",
+             "--same-time-sharing-arrangement", "--uninsured-health-monthly"],
         )
         # No environment variable is consulted by the report or the command line.
         for module in (report, cli_main):
@@ -993,6 +1000,16 @@ class AllocationReportTests(unittest.TestCase):
                 lines = old.split("\n")
                 self.assertEqual(lines.count(HEADING_OLD), 1)
                 lines[lines.index(HEADING_OLD)] = HEADING_NEW
+                # One more pinned change: every report gains the rest state of the
+                # additional-child-support section, after the low-income section and
+                # before the notes. The fixture file holds it already (a scripted edit
+                # that added exactly these three lines); this pins where it sits.
+                self.assertEqual(lines.count(REST_HEADING_LINE), 1)
+                rest_at = lines.index(REST_HEADING_LINE)
+                self.assertEqual(lines[rest_at - 1], "")
+                self.assertEqual(lines[rest_at + 1], REST_TEXT_LINE)
+                self.assertEqual(lines[rest_at + 2], "")
+                self.assertTrue(lines[rest_at + 3].startswith("You enter net disposable"))
                 if case["inputs"]["children"] >= 2:
                     self.assertEqual(lines.count(E1_LINE), 1)
                     lines[lines.index(E1_LINE)] = E2_LINE
@@ -1096,7 +1113,10 @@ class AllocationReportTests(unittest.TestCase):
                 for group in end_groups(text).values():
                     self.assertEqual(group["per_child"], [0, 0])
 
-    def test_14_parser_has_exactly_six_options_one_optional(self):  # test 14
+    # Renamed from ...exactly_six_options_one_optional: the additional-child-support
+    # build added five optional options (all required=False), so the parser has
+    # eleven, five required and six optional.
+    def test_14_parser_has_exactly_eleven_options_six_optional(self):  # test 14
         parser = cli_main._build_parser()
         self.assertFalse(parser.add_help)
         options = {}
@@ -1105,13 +1125,21 @@ class AllocationReportTests(unittest.TestCase):
                 options[option] = action
         self.assertEqual(
             sorted(options),
-            ["--a-ndi", "--a-time-percent", "--b-ndi", "--children",
-             "--minimum-wage-hourly", FLAG],
+            ["--a-adjusted-ndi", "--a-cost-share-percent", "--a-ndi",
+             "--a-time-percent", "--b-adjusted-ndi", "--b-ndi",
+             "--childcare-monthly", "--children", "--minimum-wage-hourly", FLAG,
+             "--uninsured-health-monthly"],
         )
+        optional = {
+            FLAG, "--childcare-monthly", "--uninsured-health-monthly",
+            "--a-adjusted-ndi", "--b-adjusted-ndi", "--a-cost-share-percent",
+        }
         for name, action in options.items():
             if name == FLAG:
                 self.assertFalse(action.required)
                 self.assertEqual(list(action.choices), ["yes", "no"])
+            elif name in optional:
+                self.assertFalse(action.required, name)
             else:
                 self.assertTrue(action.required, name)
 
