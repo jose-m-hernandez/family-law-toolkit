@@ -1,9 +1,9 @@
 # family-law-toolkit
 
-Tools for people working with California family-law documents. Today: a guideline child-support calculator (steps 1 and 2: the support amount, and its allocation per child), a command that compares two files' text, a counter of months that have five of a chosen weekday, a calendar that numbers the weeks of a month, and two optional PDF tools: one renders chosen pages of a PDF to PNG images, one renders Markdown tables to a PDF.
+Tools for people working with California family-law documents. Today: a guideline child-support calculator (the support amount, its allocation per child, and the split of additional child support costs), a command that compares two files' text, a counter of months that have five of a chosen weekday, a calendar that numbers the weeks of a month, and two optional PDF tools: one renders chosen pages of a PDF to PNG images, one renders Markdown tables to a PDF.
 Educational; not legal advice; not certified for court filing; consult counsel.
 
-Version 0.1.0. Six tools; each section below gives what it does, the exact command, an example on invented data, and what it does not do.
+Version 0.2.0. Six tools; each section below gives what it does, the exact command, an example on invented data, and what it does not do.
 
 - What changes, and when: [CHANGELOG.md](CHANGELOG.md)
 - How changes are made: [CONTRIBUTING.md](CONTRIBUTING.md)
@@ -31,7 +31,7 @@ The numbers are invented. You type net disposable income yourself; the tool neve
 
 With the numbers above, the report reads:
 
-    family-law-toolkit v0.1.0 — not certified for court filing; not affiliated with DissoMaster or XSpouse
+    family-law-toolkit v0.2.0 — not certified for court filing; not affiliated with DissoMaster or XSpouse
 
     Guideline child support (California Family Code section 4055)
     Amounts are monthly dollars, rounded to the nearest cent (halves round up).
@@ -134,7 +134,7 @@ The exit status is 0 when the two files are identical byte for byte, 1 when they
 
 For the two example letters, the command exits with status 1 and writes nothing to standard error. The report is:
 
-    family-law-toolkit v0.1.0 — not certified for court filing
+    family-law-toolkit v0.2.0 — not certified for court filing
 
     Comparison of two text files
     Educational; not legal advice; not certified for court filing; consult counsel.

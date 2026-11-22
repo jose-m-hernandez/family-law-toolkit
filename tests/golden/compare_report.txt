@@ -1,4 +1,4 @@
-family-law-toolkit v0.1.0 — not certified for court filing
+family-law-toolkit v0.2.0 — not certified for court filing
 
 Comparison of two text files
 Educational; not legal advice; not certified for court filing; consult counsel.
@@ -57,7 +57,7 @@ Notes
   whether any difference matters.
   It reads both files as plain text. Fonts, bold, italics, page layout,
   checked boxes and form fields are not compared, and Markdown markup is read
-  as ordinary characters.family-law-toolkit v0.1.0 — not certified for court filing
+  as ordinary characters.family-law-toolkit v0.2.0 — not certified for court filing
 
   Moves are not tracked: a paragraph that moved, or the paragraphs it moved
   past, may be listed as only in old at one place and only in new at another.

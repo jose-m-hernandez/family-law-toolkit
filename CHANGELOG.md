@@ -6,6 +6,8 @@ follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-22
+
 ### Added
 
 - The `support` command takes five more optional inputs for additional child support (FC 4062): `--childcare-monthly`, `--uninsured-health-monthly`, `--a-adjusted-ndi`, `--b-adjusted-ndi` and `--a-cost-share-percent`. Given a cost, the report splits it between the parents in proportion to the two adjusted net disposable income figures you type, after reducing the paying parent's figure by the basic support the report printed (FC 4061(d)), at each end of the range when the support amount is a range; or by the split you type. It does not adjust income for spousal support and does not say which costs count. A cost without a way to split it, an unused option, a repeated option, or a figure that leaves no share to work out is refused with one line on standard error and exit status 2.

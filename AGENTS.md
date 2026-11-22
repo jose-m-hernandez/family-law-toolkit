@@ -6,7 +6,7 @@ task here.
 
 ## Status
 
-Version 0.1.0. Four commands ship, and two optional PDF tools.
+Version 0.2.0. Four commands ship, and two optional PDF tools.
 The first is `python3 -m family_law_toolkit.support`. It takes five required
 inputs (`--a-ndi`, `--b-ndi`, `--a-time-percent`, `--children`,
 `--minimum-wage-hourly`) and six optional inputs: the original one
