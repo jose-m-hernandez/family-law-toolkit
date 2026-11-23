@@ -265,7 +265,7 @@ class ReportTests(unittest.TestCase):
         self.assertEqual([len(page.split("\n")) for page in pages[:-1]], [60])
         self.assertTrue(all(page.startswith(spec_identity_line() + "\n\n") for page in pages))
         self.assertTrue(expected.endswith(b"\n") and not expected.endswith(b"\n\n"))
-        self.assertIn(b"v0.1.0", expected)
+        self.assertIn(b"v0.2.0", expected)
 
     def test_t33_header_paths_sizes_hashes(self):
         old = b"\xef\xbb\xbf" + (PA + "\n").encode()

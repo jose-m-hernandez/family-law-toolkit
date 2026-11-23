@@ -245,10 +245,10 @@ def printed_figures(text):
 class ReportTests(unittest.TestCase):
     def test_identity_line_exact(self):
         self.assertEqual(TOOLKIT_NAME, "family-law-toolkit")
-        self.assertEqual(__version__, "0.1.0")
+        self.assertEqual(__version__, "0.2.0")
         self.assertEqual(
             IDENTITY_LINE,
-            "family-law-toolkit v0.1.0 — not certified for court filing; "
+            "family-law-toolkit v0.2.0 — not certified for court filing; "
             "not affiliated with DissoMaster or XSpouse",
         )
 
